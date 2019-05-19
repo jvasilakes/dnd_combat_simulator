@@ -8,12 +8,16 @@
  "hp": 0,
  "ac": 0,
  "speed": 0,
- "proficiency_bonus": 0,
- "weapons": [
+ "num_attacks": 1,
+ "attacks": [
 	 {"name": "",
           "type": "",
+          "range": "0/0",
+	  "atk_bonus": 0,
           "dmg_roll": "",
 	  "dmg_bonus": 0,
-	  "dmg_type": ""}
+	  "dmg_type": "",
+	  "properties": ["thrown"]
+	 }
   ]
 }

@@ -8,12 +8,16 @@
  "hp": 20,
  "ac": 14,
  "speed": 30,
- "proficiency_bonus": 3,
- "weapons": [
+ "num_attacks": 2,
+ "attacks": [
 	 {"name": "Javelin",
-          "type": "thrown",
+          "type": "melee",
+	  "range": "5/5",
+	  "atk_bonus": 3,
           "dmg_roll": "1d6",
 	  "dmg_bonus": 4,
-	  "dmg_type": "piercing"}
+	  "dmg_type": "piercing",
+	  "properties": ["thrown"]
+	 }
   ]
 }

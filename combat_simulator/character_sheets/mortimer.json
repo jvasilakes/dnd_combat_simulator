@@ -1,0 +1,41 @@
+{"name": "Mortimer Nightlock",
+ "strength": 18,
+ "dexterity": 14,
+ "constitution": 14,
+ "intelligence": 8,
+ "wisdom": 10,
+ "charisma": 18,
+ "hp": 50,
+ "ac": 14,
+ "speed": 45,
+ "num_attacks": 2,
+ "attacks": [
+	 {"name": "Greataxe",
+          "type": "melee",
+          "range": "5/5",
+	  "atk_bonus": 7,
+          "dmg_roll": "1d12",
+	  "dmg_bonus": 4,
+	  "dmg_type": "slashing",
+	  "properties": []
+	 },
+	 {"name": "Handaxe",
+          "type": "melee",
+          "range": "5/5",
+	  "atk_bonus": 7,
+          "dmg_roll": "1d6",
+	  "dmg_bonus": 4,
+	  "dmg_type": "slashing",
+	  "properties": ["thrown"]
+	 },
+	 {"name": "Javelin",
+          "type": "melee",
+          "range": "5/5",
+	  "atk_bonus": 7,
+          "dmg_roll": "1d6",
+	  "dmg_bonus": 4,
+	  "dmg_type": "piercing",
+	  "properties": ["thrown"]
+	 }
+  ]
+}
