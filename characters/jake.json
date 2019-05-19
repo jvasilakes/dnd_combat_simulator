@@ -1,0 +1,19 @@
+{"name": "Jake",
+ "strength": 10,
+ "dexterity": 13,
+ "constitution": 15,
+ "intelligence": 9,
+ "wisdom": 7,
+ "charisma": 18,
+ "hp": 20,
+ "ac": 14,
+ "speed": 30,
+ "proficiency_bonus": 3,
+ "weapons": [
+	 {"name": "Javelin",
+          "type": "thrown",
+          "dmg_roll": "1d6",
+	  "dmg_bonus": 4,
+	  "dmg_type": "piercing"}
+  ]
+}

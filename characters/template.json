@@ -1,0 +1,19 @@
+{"name": "",
+ "strength": 0,
+ "dexterity": 0,
+ "constitution": 0,
+ "intelligence": 0,
+ "wisdom": 0,
+ "charisma": 0,
+ "hp": 0,
+ "ac": 0,
+ "speed": 0,
+ "proficiency_bonus": 0,
+ "weapons": [
+	 {"name": "",
+          "type": "",
+          "dmg_roll": "",
+	  "dmg_bonus": 0,
+	  "dmg_type": ""}
+  ]
+}
