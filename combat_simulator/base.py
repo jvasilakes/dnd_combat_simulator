@@ -15,16 +15,28 @@ def parse_die(die_roll):
     return (int(d), int(n))
 
 
-def roll_die(d=20, n=1):
+def roll_die(d=20, n=1, advantage=0):
     """
     Roll a die n number of times.
 
     :param int d: The die. E.g. 20 for a d20
     :param int n: The number of times to roll.
+    :param int advantage: 1=advantage, -1=disadvantage, 0=regular roll
     :returns: The result of the roll.
     :rtype: int
     """
-    return np.random.randint(1, d, size=n).sum()
+    n = (n, 1)
+    if advantage in [1, -1]:
+        n = (n, 2)  # rolls x advantage
+    # Sum over the rolls.
+    rolls = np.random.randint(1, d, size=n).sum(axis=0)
+    # Then take (dis)advantage into account.
+    if advantage == 1:
+        return np.max(rolls)
+    elif advantage == -1:
+        return np.min(rolls)
+    else:
+        return rolls[0]
 
 
 class Attack(object):
@@ -46,7 +58,7 @@ class Attack(object):
         self.type = data["type"]
         self.range = self._parse_range(data["range"])
         self.atk_bonus = data["atk_bonus"]
-        self.dmg_roll = data["dmg_roll"]
+        self.dmg_roll = parse_die(data["dmg_roll"])
         self.dmg_bonus = data["dmg_bonus"]
         self.dmg_type = data["dmg_type"]
         self.properties = data["properties"]
@@ -167,63 +179,23 @@ class Character(object):
             raise ValueError(msg)
         self._speed = value
 
-    # TODO: Make this smarter.
-    def choose_attack(self, target):
+    def get_attack(self, attack=None):
         """
-        Choose the best attack for the given target.
-        Currently just chooses the default.
+        Interface to the character's attacks.
 
-        :param Character target: The target of the attack.
-        :returns: The attack to use.
+        :param (None, str, Attack) attack: The attack to get.
+        :returns: Attack instance
         :rtype: Attack
         """
-        return self._main_attack
-
-    def attack(self, attack=None):
-        """
-        An attack roll.
-
-        :param Attack,str attack: The attack to use. Possible values
-                                  are the attack name or the attack
-                                  instance. If None, use the default
-                                  attack.
-        :returns: The attack roll and attack bonus.
-        :rtype: (int, int)
-        """
         if attack is None:
-            atk = self._main_attack
+            return self._main_attack
         else:
-            if isinstance(attack, str):
-                atk = self.attacks[attack]
-            elif isinstance(attack, Attack):
-                atk = attack
-        roll = np.sum(roll_die(d=20, n=1))
-        return (roll, atk.atk_bonus)
-
-    def damage(self, attack=None, crit=False):
-        """
-        A damage roll.
-
-        :param Attack,str attack: The attack to use. Possible values
-                                  are the attack name or the attack
-                                  instance. If None, use the default
-                                  attack.
-        :param bool crit: Whether to roll critical hit damage (2 * dmg_dice)
-        :returns: The damage roll and the damage bonus.
-        :rtype: (int, int)
-        """
-        if attack is None:
-            atk = self._main_attack
-        else:
-            if isinstance(attack, str):
-                atk = self.attacks[attack]
-            elif isinstance(attack, Attack):
-                atk = attack
-        d, n = parse_die(atk.dmg_roll)
-        if crit is True:
-            n *= 2
-        roll = roll_die(d=d, n=n)
-        return (roll, atk.dmg_bonus)
+            if isinstance(attack, Attack):
+                return attack
+            elif isinstance(attack, str):
+                return self.attacks[attack]
+            else:
+                raise ValueError(f"Unknown attack '{attack}:{type(attack)}'.")
 
     def reset(self):
         """

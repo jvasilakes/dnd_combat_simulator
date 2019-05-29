@@ -1,14 +1,12 @@
 import numpy as np
 from collections import defaultdict
 
-from .base import roll_die
-
 
 class Team(object):
     """
-    A group of characters on the same side.
+    A group of players on the same side.
 
-    :param list members: A list of Character instances.
+    :param list members: A list of Player instances.
     :param str name: The name of this team.
     """
 
@@ -33,7 +31,7 @@ class Team(object):
         :rtype: list(Character)
         """
         if alive_only is True:
-            return [c for c in self._members if c.is_alive]
+            return [m for m in self._members if m.character.is_alive]
         else:
             return self._members
 
@@ -132,21 +130,21 @@ class Encounter(object):
         if len(teams) < 2:
             raise ValueError("An encounter must have >1 teams.")
         self.teams = teams
-        self.combatants = [c for t in self.teams for c in t.members()]
+        self.combatants = [m for t in self.teams for m in t.members()]
         self._team_map = self._get_team_map()
         self.stats = EncounterStats()
 
     def _get_team_map(self):
         tm = {}
         for team in self.teams:
-            for char in team.members():
-                tm[char.id] = team
+            for mem in team.members():
+                tm[mem.character.id] = team
         return tm
 
     def __str__(self):
         return ' vs. '.join([t.name for t in self.teams])
 
-    def team(self, character):
+    def team(self, player):
         """
         Returns the team of this character.
 
@@ -154,7 +152,7 @@ class Encounter(object):
         :returns: The team of this character.
         :rtype: Team
         """
-        return self._team_map[character.id]
+        return self._team_map[player.character.id]
 
     def run(self, random_seed=None, verbose=0):
         """
@@ -171,24 +169,25 @@ class Encounter(object):
             enemies = [c for c in self.combatants if self.team(c) != team]
             enemy_table[team.name] = enemies
         while True:
-            for character in turn_order:
-                if not character.is_alive:
+            for player in turn_order:
+                char = player.character
+                if not char.is_alive:
                     continue
                 # Choose an enemy
-                team = self.team(character)
+                team = self.team(player)
                 enemy = np.random.choice(enemy_table[team.name])
                 # Fight the enemy
-                (h, c, dmg) = self._fight(character, enemy)
-                self.stats.add_damage_dealt(character, dmg)
-                self.stats.add_damage_taken(enemy, dmg)
-                self.stats.add_hit(character, h)
+                (h, c, dmg) = self._fight(player, enemy)
+                self.stats.add_damage_dealt(char, dmg)
+                self.stats.add_damage_taken(enemy.character, dmg)
+                self.stats.add_hit(char, h)
                 if verbose > 0:
-                    print(f"{character} --> {enemy}: {h}, {c}, {dmg}")
-                    print(f"{character} ({character.HP})")
-                    print(f"{enemy} ({enemy.HP})")
+                    print(f"{char} --> {enemy.character}: {h}, {c}, {dmg}")
+                    print(f"{char} ({char.HP})")
+                    print(f"{enemy.character} ({enemy.character.HP})")
                     print("---")
                 # Check if the battle has been won.
-                if not enemy.is_alive:
+                if not enemy.character.is_alive:
                     enemy_table[team.name].remove(enemy)
                     if verbose > 0:
                         print("===")
@@ -203,13 +202,9 @@ class Encounter(object):
         Rolls initiative for each character in each team and
         returns them in the order in which they take their turns.
         """
-        inits = []
-        for char in self.combatants:
-            roll = roll_die(d=20, n=1)
-            init = roll + char.ability_modifier["dex"]
-            inits.append((char, init))
+        inits = [(plyr, plyr.roll_initiative()) for plyr in self.combatants]
         order = sorted(inits, key=lambda x: x[1], reverse=True)
-        return [char for (char, init) in order]
+        return [plyr for (plyr, init) in order]
 
     def _fight(self, attacker, victim):
 
@@ -224,11 +219,11 @@ class Encounter(object):
         crit = False
         dmg = 0
         atk = attacker.choose_attack(victim)
-        roll, bonus = attacker.attack(atk)
-        hit = _hit(roll, bonus, victim.ac)
+        roll, bonus = attacker.attack_roll(atk)
+        hit = _hit(roll, bonus, victim.character.ac)
         if hit is True:
             if roll == 20:
                 crit = True
-            dmg = sum(attacker.damage(crit=crit))
-            victim.HP -= dmg
+            dmg = sum(attacker.damage_roll(crit=crit))
+            victim.character.HP -= dmg
         return (hit, crit, dmg)
