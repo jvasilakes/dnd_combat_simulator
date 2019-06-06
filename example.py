@@ -1,31 +1,39 @@
 import json
-from combat_simulator import Character, Player, Team, Encounter
+from combat_simulator import Character, Player, Team, Encounter, Grid
 
 
 # Create the characters
-jake_data = json.load(open("combat_simulator/character_sheets/jake.json", 'r'))
-mort_data = json.load(open("combat_simulator/character_sheets/mortimer.json", 'r'))
+jake_file = "combat_simulator/character_sheets/jake.json"
+mort_file = "combat_simulator/character_sheets/mortimer.json"
+jake_data = json.load(open(jake_file, 'r'))
+mort_data = json.load(open(mort_file, 'r'))
 
-jake1 = Character(**jake_data)
-jake2 = Character(**jake_data)
-jake3 = Character(**jake_data)
+jakes = [Character(**jake_data) for _ in range(3)]
 mortimer = Character(**mort_data)
 
-# Assign each a player
-p1 = Player(jake1)
-p2 = Player(jake2)
-p3 = Player(jake3)
-p4 = Player(mortimer)
 
 # Create the teams
-team_jake = Team(members=[p1, p2, p3], name="JakeTeam")
-team_mort = Team(members=[p4], name="TeamMort")
+team_jake = Team(members=[Player(jake) for jake in jakes],
+                 name="JakeTeam")
+team_mort = Team(members=[Player(mortimer)], name="TeamMort")
+
+# Create a map and add a character to it.
+grid = Grid()
+grid.add(mortimer, pos=(0, 0))
+grid.add(jakes[0], pos=(5, 5))
+print(grid)
+# Move the character to a new position.
+team_mort.members()[0].move_character(grid)
+team_jake.members()[0].move_character(grid)
+print(grid)
 
 # Run a series of encounters to see who wins.
-enc = Encounter(teams=[team_jake, team_mort])
+enc = Encounter(teams=[team_jake, team_mort], grid=grid)
 print(enc)
 winners = []
 for i in range(10):
-    winner = enc.run(random_seed=i)
+    winner = enc.run_combat(random_seed=i, verbose=0)
     winners.append(winner)
-print(f"WINNERS: {[w.name for w in winners]}")
+    print(f"Round {i+1} winner: {winner}")
+    enc.summary()
+    print("---")

@@ -1,6 +1,8 @@
 import numpy as np
 from collections import defaultdict
 
+from .grid import Grid
+
 
 class Team(object):
     """
@@ -21,6 +23,9 @@ class Team(object):
 
     def __repr__(self):
         return str(self.__dict__)
+
+    def __len__(self):
+        return len(self._members)
 
     def members(self, alive_only=False):
         """
@@ -84,7 +89,7 @@ class EncounterStats(object):
         n_hits = self.n_hits(character)
         n_atks = self.n_attacks(character)
         hit_ratio = 100 * (n_hits / n_atks)
-        print(f"Dealt: {dmg_d:.2f}, Taken: {dmg_t:.2f}, Hits: {n_hits}/{n_atks} ({hit_ratio:.1f}%)")  # noqa
+        print(f"Dealt: {dmg_d:.2f}, Taken: {dmg_t:.2f}, Hit Ratio: {n_hits}/{n_atks} ({hit_ratio:.1f}%)")  # noqa
 
     def average_damage_dealt(self, character):
         """
@@ -126,15 +131,21 @@ class Encounter(object):
     :param list teams: A list of Team instances.
     """
 
-    def __init__(self, teams=[]):
-        if len(teams) < 2:
-            raise ValueError("An encounter must have >1 teams.")
+    # TODO: Use the grid.
+    def __init__(self, teams, grid):
+        self._check_params(teams, grid)
         self.teams = teams
         self.combatants = [m for t in self.teams for m in t.members()]
-        self._team_map = self._get_team_map()
+        self._team_lookup = self._get_team_lookup()
+        self.grid = grid
         self.stats = EncounterStats()
 
-    def _get_team_map(self):
+    def _check_params(self, teams, grid):
+        assert(all([isinstance(t, Team) for t in teams]))
+        assert(len(teams) >= 2)
+        assert(isinstance(grid, Grid))
+
+    def _get_team_lookup(self):
         tm = {}
         for team in self.teams:
             for mem in team.members():
@@ -152,9 +163,9 @@ class Encounter(object):
         :returns: The team of this character.
         :rtype: Team
         """
-        return self._team_map[player.character.id]
+        return self._team_lookup[player.character.id]
 
-    def run(self, random_seed=None, verbose=0):
+    def run_combat(self, random_seed=None, verbose=0):
         """
         Run simulated combat among all the teams.
 
@@ -227,3 +238,8 @@ class Encounter(object):
             dmg = sum(attacker.damage_roll(crit=crit))
             victim.character.HP -= dmg
         return (hit, crit, dmg)
+
+    def summary(self):
+        for plyr in self.combatants:
+            print(f"{plyr.character}: ", end='')
+            self.stats.summary(plyr.character)

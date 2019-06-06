@@ -1,6 +1,3 @@
-from .base import roll_die
-
-
 class Player(object):
     """
     A player controls a character.
@@ -12,14 +9,13 @@ class Player(object):
 
     def __init__(self, character):
         self.character = character
-        self.pos = (-1, -1)  # The character position x, y
 
     def __str__(self):
         return str(self.character)
 
     def __repr__(self):
         return repr(self.character)
-    
+
     def roll_initiative(self):
         """
         Roll combat initiative.
@@ -87,5 +83,20 @@ class Player(object):
         # The main hand attack
         return self.character.get_attack()
 
-    def move_character(self):
-        raise NotImplementedError
+    # TODO: Make this smarter.
+    def _find_best_position(self, grid):
+        pos = grid[self.character]
+        return (pos[0] + 1, pos[1] + 1)
+
+    def move_character(self, grid, pos=None):
+        """
+        Move the character to a new position on the grid.
+
+        :param Grid grid: The grid.
+        :param tuple(int) pos: The new (x, y) position. Optional.
+                               If None, use heuristics to find the
+                               new pos.
+        """
+        if pos is None:
+            pos = self._find_best_position(grid)
+        grid[self.character] = pos

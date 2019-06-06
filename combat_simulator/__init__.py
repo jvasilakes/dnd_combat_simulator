@@ -1,3 +1,3 @@
-from .base import Character
-from .player import Player
+from .base import Character, Player
+from .grid import Grid
 from .encounter import Team, Encounter
