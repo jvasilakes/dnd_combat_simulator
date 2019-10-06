@@ -1,3 +1,6 @@
+from .dice import roll_die
+
+
 class Player(object):
     """
     A player controls a character.
@@ -7,96 +10,116 @@ class Player(object):
     :param Character character: This player's character.
     """
 
-    def __init__(self, character):
-        self.character = character
+    def __init__(self, name="Default"):
+        self.name = name
 
     def __str__(self):
-        return str(self.character)
+        return self.name
 
     def __repr__(self):
-        return repr(self.character)
+        return self.name
 
-    def roll_initiative(self):
+    def roll_initiative(self, character):
         """
         Roll combat initiative.
 
+        :param Character character: The character to control.
         :returns: Initiative roll
         :rtype: int
         """
         roll = roll_die(d=20, n=1)
-        mod = self.character.ability_modifier["dex"]
+        mod = character.ability_modifier["dex"]
         return roll + mod
 
-    def saving_throw(self, ability, advantage=0):
+    def saving_throw(self, character, ability, advantage=0):
         """
         Make a saving throw for the specified ability.
 
+        :param Character character: The character to control.
         :param str ability: The ability to use.
         :param int advantage: 1=advantage, -1=disadvantage, 0=neither
         :returns: saving throw roll
         :rtype: int
         """
         roll = roll_die(d=20, n=1, advantage=advantage)
-        mod = self.character.ability_modifier[ability]
+        mod = character.ability_modifier[ability]
         return roll + mod
 
-    def attack_roll(self, attack=None, advantage=0):
+    def attack_roll(self, character, attack=None, advantage=0):
         """
         An attack roll for a given attack.
 
+        :param Character character: The character to control.
         :param (Attack, str) attack: The attack to use. If None,
                                      use the default attack.
         :param int advantage: 1=advantage, -1=disadvantage, 0=neither.
         :returns: The attack roll and the attack bonus.
         :rtype: (int, int)
         """
-        atk = self.character.get_attack(attack)
+        atk = character.get_attack(attack)
         roll = roll_die(d=20, n=1, advantage=advantage)
         return (roll, atk.atk_bonus)
 
-    def damage_roll(self, attack=None, crit=False):
+    def damage_roll(self, character, attack=None, crit=False):
         """
         A damage roll for a given attack.
 
+        :param Character character: The character to control.
         :param (Attack, str) attack: The attack to use. If None,
                                      use the default attack.
         :param bool crit: Whether to roll critical hit damage (2 * dmg_roll).
         :returns: the damage roll and the damage bonus.
         :rtype: (int, int)
         """
-        atk = self.character.get_attack(attack)
+        atk = character.get_attack(attack)
         d, n = atk.dmg_roll
         if crit is True:
             n *= 2
         roll = roll_die(d=d, n=n)
         return (roll, atk.dmg_bonus)
 
-    def choose_attack(self, target):
+    def choose_attack(self, character, target=None):
         """
         Choose the best attack for the given target.
         Currently just chooses the default attack.
 
+        :param Character character: The character to control.
         :param Character target: The target of the attack.
         :returns: The attack to use.
         :rtype: Attack
         """
         # The main hand attack
-        return self.character.get_attack()
+        return character.get_attack()
 
-    # TODO: Make this smarter.
-    def _find_best_position(self, grid):
-        pos = grid[self.character]
-        return (pos[0] + 1, pos[1] + 1)
+    # TODO: Make it so characters cannot occupy the same space.
+    # I tried implementing a check, but it doesn't work and I
+    # don't know why.
+    def _find_best_position(self, character, grid):
+        """
+        Move the character to the "best" position on the grid.
 
-    def move_character(self, grid, pos=None):
+        :param Character character: The character to control.
+        :param Grid grid: The grid.
+        :returns: The new (x,y) position of the character on the grid.
+        :rtype: tuple
+        """
+        pos = grid[character]
+        new_pos = (pos[0] + 1, pos[1] + 1)
+        if grid[new_pos] == 1:
+            return pos
+        else:
+            return new_pos
+
+    def move_character(self, character, grid, pos=None):
         """
         Move the character to a new position on the grid.
 
+        :param Character character: The character to control.
         :param Grid grid: The grid.
         :param tuple(int) pos: The new (x, y) position. Optional.
                                If None, use heuristics to find the
                                new pos.
         """
         if pos is None:
-            pos = self._find_best_position(grid)
-        grid[self.character] = pos
+            pos = self._find_best_position(character, grid)
+        grid[character] = pos

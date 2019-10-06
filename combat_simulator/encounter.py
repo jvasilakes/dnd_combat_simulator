@@ -1,6 +1,7 @@
 import numpy as np
 from collections import defaultdict
 
+from .character import Character
 from .grid import Grid
 
 
@@ -8,15 +9,19 @@ class Team(object):
     """
     A group of players on the same side.
 
-    :param list members: A list of Player instances.
+    :param list members: A list of Character instances.
     :param str name: The name of this team.
     """
 
     def __init__(self, members=[], name=""):
+        self._check_params(members)
         self._members = members
         if not name:
             raise ValueError("name cannot be empty.")
-        self.name = name
+        self.name = str(name)
+
+    def _check_params(self, members):
+        assert(all([isinstance(m, Character) for m in members]))
 
     def __str__(self):
         return self.name
@@ -36,7 +41,7 @@ class Team(object):
         :rtype: list(Character)
         """
         if alive_only is True:
-            return [m for m in self._members if m.character.is_alive]
+            return [m for m in self._members if m.is_alive]
         else:
             return self._members
 
@@ -148,8 +153,8 @@ class Encounter(object):
     def _get_team_lookup(self):
         tm = {}
         for team in self.teams:
-            for mem in team.members():
-                tm[mem.character.id] = team
+            for character in team.members():
+                tm[character.id] = team
         return tm
 
     def __str__(self):
@@ -188,12 +193,12 @@ class Encounter(object):
                 team = self.team(player)
                 enemy = np.random.choice(enemy_table[team.name])
                 # Fight the enemy
-                (h, c, dmg) = self._fight(player, enemy)
+                (is_hit, is_crit, dmg) = self._fight(player, enemy)
                 self.stats.add_damage_dealt(char, dmg)
                 self.stats.add_damage_taken(enemy.character, dmg)
-                self.stats.add_hit(char, h)
+                self.stats.add_hit(char, is_hit)
                 if verbose > 0:
-                    print(f"{char} --> {enemy.character}: {h}, {c}, {dmg}")
+                    print(f"{char} --> {enemy.character}: {is_hit}, {is_crit}, {dmg}")  # noqa
                     print(f"{char} ({char.HP})")
                     print(f"{enemy.character} ({enemy.character.HP})")
                     print("---")
@@ -227,17 +232,17 @@ class Encounter(object):
             else:
                 return False
 
-        crit = False
+        is_crit = False
         dmg = 0
         atk = attacker.choose_attack(victim)
         roll, bonus = attacker.attack_roll(atk)
-        hit = _hit(roll, bonus, victim.character.ac)
-        if hit is True:
+        is_hit = _hit(roll, bonus, victim.character.ac)
+        if is_hit is True:
             if roll == 20:
-                crit = True
-            dmg = sum(attacker.damage_roll(crit=crit))
+                is_crit = True
+            dmg = sum(attacker.damage_roll(crit=is_crit))
             victim.character.HP -= dmg
-        return (hit, crit, dmg)
+        return (is_hit, is_crit, dmg)
 
     def summary(self):
         for plyr in self.combatants:

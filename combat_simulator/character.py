@@ -1,42 +1,6 @@
 import numpy as np
 
-
-def parse_die(die_roll):
-    """
-    Parse a standard die roll representation into
-    the die and the number of rolls. E.g.
-    2d8 -> d=8, n=2
-
-    :param str die_roll: The die roll.
-    :returns: The die and the roll.
-    :rtype: (int, int)
-    """
-    (n, d) = die_roll.lower().split('d')
-    return (int(d), int(n))
-
-
-def roll_die(d=20, n=1, advantage=0):
-    """
-    Roll a die n number of times.
-
-    :param int d: The die. E.g. 20 for a d20
-    :param int n: The number of times to roll.
-    :param int advantage: 1=advantage, -1=disadvantage, 0=regular roll
-    :returns: The result of the roll.
-    :rtype: int
-    """
-    n = (n, 1)
-    if advantage in [1, -1]:
-        n = (n, 2)  # rolls x advantage
-    # Sum over the rolls.
-    rolls = np.random.randint(1, d, size=n).sum(axis=0)
-    # Then take (dis)advantage into account.
-    if advantage == 1:
-        return np.max(rolls)
-    elif advantage == -1:
-        return np.min(rolls)
-    else:
-        return rolls[0]
+from . import dice
 
 
 class Attack(object):
@@ -58,7 +22,7 @@ class Attack(object):
         self.type = data["type"]
         self.range = self._parse_range(data["range"])
         self.atk_bonus = data["atk_bonus"]
-        self.dmg_roll = parse_die(data["dmg_roll"])
+        self.dmg_roll = dice.parse_die(data["dmg_roll"])
         self.dmg_bonus = data["dmg_bonus"]
         self.dmg_type = data["dmg_type"]
         self.properties = data["properties"]
@@ -207,107 +171,3 @@ class Character(object):
         """
         self.HP = self._hp_max
         self.speed = self._speed_max
-
-
-class Player(object):
-    """
-    A player controls a character.
-    This class implements all the actions surrounding the character,
-    e.g. their movement and position, rolls, attacking, etc.
-
-    :param Character character: This player's character.
-    """
-
-    def __init__(self, character):
-        self.character = character
-
-    def __str__(self):
-        return str(self.character)
-
-    def __repr__(self):
-        return repr(self.character)
-
-    def roll_initiative(self):
-        """
-        Roll combat initiative.
-
-        :returns: Initiative roll
-        :rtype: int
-        """
-        roll = roll_die(d=20, n=1)
-        mod = self.character.ability_modifier["dex"]
-        return roll + mod
-
-    def saving_throw(self, ability, advantage=0):
-        """
-        Make a saving throw for the specified ability.
-
-        :param str ability: The ability to use.
-        :param int advantage: 1=advantage, -1=disadvantage, 0=neither
-        :returns: saving throw roll
-        :rtype: int
-        """
-        roll = roll_die(d=20, n=1, advantage=advantage)
-        mod = self.character.ability_modifier[ability]
-        return roll + mod
-
-    def attack_roll(self, attack=None, advantage=0):
-        """
-        An attack roll for a given attack.
-
-        :param (Attack, str) attack: The attack to use. If None,
-                                     use the default attack.
-        :param int advantage: 1=advantage, -1=disadvantage, 0=neither.
-        :returns: The attack roll and the attack bonus.
-        :rtype: (int, int)
-        """
-        atk = self.character.get_attack(attack)
-        roll = roll_die(d=20, n=1, advantage=advantage)
-        return (roll, atk.atk_bonus)
-
-    def damage_roll(self, attack=None, crit=False):
-        """
-        A damage roll for a given attack.
-
-        :param (Attack, str) attack: The attack to use. If None,
-                                     use the default attack.
-        :param bool crit: Whether to roll critical hit damage (2 * dmg_roll).
-        :returns: the damage roll and the damage bonus.
-        :rtype: (int, int)
-        """
-        atk = self.character.get_attack(attack)
-        d, n = atk.dmg_roll
-        if crit is True:
-            n *= 2
-        roll = roll_die(d=d, n=n)
-        return (roll, atk.dmg_bonus)
-
-    def choose_attack(self, target):
-        """
-        Choose the best attack for the given target.
-        Currently just chooses the default attack.
-
-        :param Character target: The target of the attack.
-        :returns: The attack to use.
-        :rtype: Attack
-        """
-        # The main hand attack
-        return self.character.get_attack()
-
-    # TODO: Make this smarter.
-    def _find_best_position(self, grid):
-        pos = grid[self.character]
-        return (pos[0] + 1, pos[1] + 1)
-
-    def move_character(self, grid, pos=None):
-        """
-        Move the character to a new position on the grid.
-
-        :param Grid grid: The grid.
-        :param tuple(int) pos: The new (x, y) position. Optional.
-                               If None, use heuristics to find the
-                               new pos.
-        """
-        if pos is None:
-            pos = self._find_best_position(grid)
-        grid[self.character] = pos

@@ -1,22 +1,22 @@
 import numpy as np
 
-from .base import Character
+from .character import Character
 
 
 class Grid(object):
 
     def __init__(self, shape=(10, 10)):
+        self.shape = shape
         self._grid = np.zeros(shape, dtype=int)
         self._grid_map = {}
         self._icon_map = {}
 
     def __str__(self):
-        hline = ''.join(['━'] * ((self._grid.shape[0] * 2) - 1))
+        hline = ''.join(['━'] * ((2 * self._grid.shape[0]) - 1))
         topline = '┏' + hline + '┓'
         bottomline = '┗' + hline + '┛'
         str_grid = self._grid.astype(str)
         str_grid[np.where(str_grid == '0')] = '·'
-        #str_grid[np.where(str_grid == '1')] = '@'
         for (cid, pos) in self._grid_map.items():
             icon = self._icon_map[cid]
             str_grid[pos] = icon
@@ -25,19 +25,30 @@ class Grid(object):
         lines.append(bottomline)
         return '\n'.join(lines)
 
-
     def __repr__(self):
         return f"{self._grid.shape}"
 
-    def __getitem__(self, character):
+    @property
+    def screen_size(self):
+        x = (2 * self._grid.shape[0]) + 2
+        y = self.shape[1] + 2
+        return x, y
+
+    def __getitem__(self, character_or_pos):
         """
         Get a character's position on the grid.
 
         :param Character character: The character.
         """
-        if not isinstance(character, Character):
-            raise KeyError(f"{character} not on grid.")
-        return self._grid_map[character.id]
+        if isinstance(character_or_pos, Character):
+            return self._grid_map[character_or_pos.id]
+        elif isinstance(character_or_pos, tuple):
+            x = character_or_pos[0]
+            y = character_or_pos[1]
+            try:
+                return self._grid[(x, y)]
+            except IndexError:
+                return -1
 
     # TODO: Take other character's positions into account.
     def _enforce_boundaries(self, pos):
@@ -87,12 +98,12 @@ class Grid(object):
         self._grid[pos] = 0
         del self._grid_map[character.id]
 
-    def add(self, character, pos=None):
+    def add_character(self, character, pos=None):
         """
-        Add a character to the grid. If pos is not specified,
+        Add a Character instance to the grid. If pos is not specified,
         randomly assign it to an unoccupied position.
 
-        :param Character other: The character to add.
+        :param Character character: The character to add.
         :param tuple(int) pos: The (x, y) position of the character. Optional.
         """
         if not isinstance(character, Character):
