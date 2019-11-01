@@ -34,23 +34,6 @@ class Grid(object):
         y = self.shape[1] + 2
         return x, y
 
-    def __getitem__(self, character_or_pos):
-        """
-        Get a character's position on the grid.
-
-        :param Character character: The character.
-        """
-        if isinstance(character_or_pos, Character):
-            return self._grid_map[character_or_pos.id]
-        elif isinstance(character_or_pos, tuple):
-            x = character_or_pos[0]
-            y = character_or_pos[1]
-            try:
-                return self._grid[(x, y)]
-            except IndexError:
-                return -1
-
-    # TODO: Take other character's positions into account.
     def _enforce_boundaries(self, pos):
         """
         Make sure the position stays within the boundaries
@@ -68,6 +51,21 @@ class Grid(object):
         y = max([0, y])
         y = min([ylim, y])
         return (x, y)
+
+    def __getitem__(self, character_or_pos):
+        """
+        Get a character's position on the grid.
+
+        :param Character character: The character.
+        """
+        if isinstance(character_or_pos, Character):
+            return self._grid_map[character_or_pos.id]
+        elif isinstance(character_or_pos, tuple):
+            pos = self._enforce_boundaries(character_or_pos)
+            try:
+                return self._grid[pos]
+            except IndexError:
+                return -1
 
     def __setitem__(self, character, pos):
         """

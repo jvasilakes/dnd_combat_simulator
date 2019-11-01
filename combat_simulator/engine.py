@@ -1,4 +1,5 @@
 import curses
+import time
 
 from .grid import Grid
 from .player import Player
@@ -13,41 +14,38 @@ class Engine(object):
 
     def gameloop(self):
 
-        def main(curses_scr):
-            grid = Grid()
-            for team in self.teams:
-                for character in team.members():
-                    grid.add_character(character)
+        # Initialize the grid and add the players
+        # to random positions.
+        grid = Grid()
+        for team in self.teams:
+            for character in team.members():
+                grid.add_character(character)
 
-            gamewin = GameWindow(grid, (0, 0))
-            msgwin = MessageWindow((13, 0))
-            enc = Encounter(teams=self.teams, grid=grid)
+        def main(curses_scr):
+            gamewin = GameWindow(grid, pos=(0, 0))
+            msgwin = MessageWindow(pos=(13, 0))
+            enc = Encounter(teams=self.teams, grid=grid, player=self.player)
+            inits = enc._roll_initiative()
+            init_str = ["Initiative"] + inits
+            msgwin.redraw('\n'.join([str(init) for init in init_str]))
+            msgwin.getch()
+            msgwin.redraw(str(enc))
             while True:
-                gamewin.redraw()
-                msgwin.redraw(str(enc))
                 for team in self.teams:
                     for character in team.members():
-                        self.player.move_character(character, grid, pos=None)
-                msgwin.getch()
+                        new_pos = self.player.move_character(character,
+                                                             grid, pos=None)
+                        if new_pos is None:
+                            continue
+                        gamewin.redraw()
+                        time.sleep(0.2)
 
         curses.wrapper(main)
-
-## Run a series of encounters to see who wins.
-#enc = Encounter(teams=[team_jake, team_mort], grid=grid)
-#print(enc)
-#winners = []
-#for i in range(10):
-#    winner = enc.run_combat(random_seed=i, verbose=0)
-#    winners.append(winner)
-#    print(f"Round {i+1} winner: {winner}")
-#    enc.summary()
-#    print("---")
-#    input()
 
 
 class GameWindow(object):
 
-    def __init__(self, grid, pos):
+    def __init__(self, grid, pos=(0, 0)):
         self._check_params(grid)
         self.pos = pos
         self.grid = grid
@@ -73,7 +71,7 @@ class GameWindow(object):
 
 class MessageWindow(object):
 
-    def __init__(self, pos):
+    def __init__(self, pos=(0, 0)):
         self.pos = pos
         self._create_window()
 

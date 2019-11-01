@@ -91,9 +91,6 @@ class Player(object):
         # The main hand attack
         return character.get_attack()
 
-    # TODO: Make it so characters cannot occupy the same space.
-    # I tried implementing a check, but it doesn't work and I
-    # don't know why.
     def _find_best_position(self, character, grid):
         """
         Move the character to the "best" position on the grid.
@@ -119,7 +116,13 @@ class Player(object):
         :param tuple(int) pos: The new (x, y) position. Optional.
                                If None, use heuristics to find the
                                new pos.
+        :returns: The new position or None if the character didn't move.
         """
+        current_pos = grid[character]
         if pos is None:
             pos = self._find_best_position(character, grid)
-        grid[character] = pos
+        if pos != current_pos:
+            grid[character] = pos
+            return pos
+        else:
+            return None
