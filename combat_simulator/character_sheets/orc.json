@@ -1,0 +1,24 @@
+{"name": "Orc",
+ "icon": "o",
+ "strength": 16,
+ "dexterity": 12,
+ "constitution": 16,
+ "intelligence": 7,
+ "wisdom": 11,
+ "charisma": 10,
+ "hp": 30,
+ "ac": 15,
+ "speed": 30,
+ "num_attacks": 1,
+ "attacks": [
+	 {"name": "Greataxe",
+          "type": "melee",
+          "range": "5/5",
+	  "atk_bonus": 5,
+          "dmg_roll": "1d12",
+	  "dmg_bonus": 3,
+	  "dmg_type": "Slashing",
+	  "properties": []
+	 }
+  ]
+}

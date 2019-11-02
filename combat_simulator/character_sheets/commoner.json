@@ -1,0 +1,24 @@
+{"name": "Commoner",
+ "icon": "C",
+ "strength": 10,
+ "dexterity": 10,
+ "constitution": 10,
+ "intelligence": 10,
+ "wisdom": 10,
+ "charisma": 10,
+ "hp": 4,
+ "ac": 10,
+ "speed": 30,
+ "num_attacks": 1,
+ "attacks": [
+	 {"name": "Club",
+          "type": "melee",
+	  "range": "5/5",
+	  "atk_bonus": 2,
+          "dmg_roll": "1d4",
+	  "dmg_bonus": 0,
+	  "dmg_type": "bludgeoning",
+	  "properties": []
+	 }
+  ]
+}
