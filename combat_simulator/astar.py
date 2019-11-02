@@ -44,7 +44,6 @@ def astar(start, end, adj_matrix, moves=-1):
         path.append(came_from[current])
         current = came_from[current]
     path = path[::-1]
-    logging.debug(f"path {path}")
     if moves == -1:
         return path
     else:

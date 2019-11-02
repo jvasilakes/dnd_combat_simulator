@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 from collections import defaultdict
 
@@ -5,6 +6,8 @@ from .character import Character
 from .grid import Grid
 from .player import Player
 from .astar import distance
+
+logging.basicConfig(filename="app.log", filemode='w', level=logging.DEBUG)
 
 
 class Team(object):
@@ -90,6 +93,8 @@ class Encounter(object):
 
     def _set_combatants_goals(self):
         for c in self.combatants:
+            if not c.is_alive:
+                continue
             team = self._team_lookup[c.id]
             enemies = self._enemy_lookup[team.name]
             # Choose an enemy to attack.
@@ -120,34 +125,30 @@ class Encounter(object):
         :rtype: Team
         """
         rounds = 0
-        while True:
+        won = False
+        while won is False:
             for (character, _) in self.turn_order:
                 if not character.is_alive:
                     continue
-                new_pos = self.player.move_character(character, self.grid)
+                new_pos = self.player.move_character(character, self.grid)  # noqa
+                enemy = character.goal
+                if self.grid.is_adjacent(character, enemy):
+                    is_hit, is_crit, dmg = self._fight(character, enemy)
+                    if is_hit is True:
+                        logging.debug(f"{character} -> {enemy} ({enemy.HP})")
+                    else:
+                        logging.debug(f"{character} X {enemy}")
+                team = self._team_lookup[character.id]
+                if not enemy.is_alive:
+                    self._enemy_lookup[team.name].remove(enemy)
+                    self.grid.rm_character(enemy)
+                    if self._enemy_lookup[team.name] == []:
+                        self.winner = team
+                        won = True
+                        break
+                    self._set_combatants_goals()
             rounds += 1
             yield rounds
-
-                ## Fight the enemy
-                #(is_hit, is_crit, dmg) = self._fight(player, enemy)
-                #self.stats.add_damage_dealt(char, dmg)
-                #self.stats.add_damage_taken(enemy.character, dmg)
-                #self.stats.add_hit(char, is_hit)
-                #if verbose > 0:
-                #    print(f"{char} --> {enemy.character}: {is_hit}, {is_crit}, {dmg}")  # noqa
-                #    print(f"{char} ({char.HP})")
-                #    print(f"{enemy.character} ({enemy.character.HP})")
-                #    print("---")
-                ## Check if the battle has been won.
-                #if not enemy.character.is_alive:
-                #    self._enemy_lookup[team.name].remove(enemy)
-                #    if verbose > 0:
-                #        print("===")
-                #        print(self._enemy_lookup[team.name])
-                #        print("===")
-                #    if self._enemy_lookup[team.name] == []:
-                #        winner = team
-                #        return winner
 
     def _roll_initiative(self):
         """
@@ -171,14 +172,14 @@ class Encounter(object):
 
         is_crit = False
         dmg = 0
-        atk = attacker.choose_attack(victim)
-        roll, bonus = attacker.attack_roll(atk)
-        is_hit = _hit(roll, bonus, victim.character.ac)
+        atk = self.player.choose_attack(attacker, target=victim)
+        roll, bonus = self.player.attack_roll(attacker, atk)
+        is_hit = _hit(roll, bonus, victim.ac)
         if is_hit is True:
             if roll == 20:
                 is_crit = True
-            dmg = sum(attacker.damage_roll(crit=is_crit))
-            victim.character.HP -= dmg
+            dmg = sum(self.player.damage_roll(attacker, atk, crit=is_crit))
+            victim.HP -= dmg
         return (is_hit, is_crit, dmg)
 
     def summary(self):

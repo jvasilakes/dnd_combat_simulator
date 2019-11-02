@@ -19,7 +19,7 @@ class Engine(object):
 
         # Initialize the grid and add the players
         # to random positions.
-        grid = Grid()
+        grid = Grid(shape=(20, 20))
         for team in self.teams:
             for character in team.members():
                 grid.add_character(character)
@@ -28,21 +28,26 @@ class Engine(object):
         # Start the encounter
         enc = Encounter(teams=self.teams, grid=grid, player=self.player)
         logging.debug(f"Encounter {enc}")
-        logging.debug([c.goal for c in enc.combatants])
         inits = enc._roll_initiative()
 
         def main(curses_scr):
             gamewin = GameWindow(grid, pos=(0, 0))
             gamewin.redraw()
-            msgwin = MessageWindow(pos=(13, 0))
+            msg_size = (50, 30)
+            msg_pos = (grid.shape[1]+3, 0)
+            msgwin = MessageWindow(size=msg_size, pos=msg_pos)
             init_str = ["Initiative"] + inits
             msgwin.redraw('\n'.join([str(init) for init in init_str]))
             msgwin.getch()
             msgwin.redraw(str(enc))
             enc.init_combat()
+            logging.debug([c.goal for c in enc.combatants])
             for rnd in enc.run_combat():
                 gamewin.redraw()
-                time.sleep(0.001)
+                time.sleep(0.5)
+            msgwin.redraw(str(enc.winner))
+            msgwin.getch()
+            return
 
         curses.wrapper(main)
 
@@ -75,12 +80,15 @@ class GameWindow(object):
 
 class MessageWindow(object):
 
-    def __init__(self, pos=(0, 0)):
+    def __init__(self, size=(10, 30), pos=(0, 0)):
         self.pos = pos
+        self.size = size
         self._create_window()
 
     def _create_window(self):
-        self.win = curses.newwin(10, 30, *self.pos)
+        y = self.size[1]
+        x = self.size[0]
+        self.win = curses.newwin(y, x, *self.pos)
 
     def redraw(self, msg):
         self.win.erase()

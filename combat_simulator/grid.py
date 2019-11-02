@@ -94,17 +94,18 @@ class Grid(object):
         self._grid[pos] = 1
         self._grid_map[character.id] = pos
 
-    def __delitem__(self, character):
+    def rm_character(self, character):
         """
         Remove a character from the grid.
 
-        :param Character character: The character.
+        :param Character character: The character to remove.
         """
         if not isinstance(character, Character):
             raise ValueError(f"character must be of type Character.")
         pos = self._grid_map[character.id]
         self._grid[pos] = 0
         del self._grid_map[character.id]
+        del self._icon_map[character.id]
 
     def add_character(self, character, pos=None):
         """
@@ -125,39 +126,49 @@ class Grid(object):
         self._grid_map[character.id] = pos
         self._icon_map[character.id] = character.icon
 
-    def to_adjacency(self):
+    def _get_adjacent_indices(self, x, y):
+        """
+        x, y: row and columns positions to check
+        """
+        m, n = self._grid.shape
+        adjacent_indices = []
+        if x > 0:
+            adjacent_indices.append((x-1, y))
+        if x+1 < m:
+            adjacent_indices.append((x+1, y))
+        if y > 0:
+            adjacent_indices.append((x, y-1))
+        if y+1 < n:
+            adjacent_indices.append((x, y+1))
+        return adjacent_indices
 
-        def get_adjacent_indices(x, y, m, n):
-            """
-            x, y: row and columns positions to check
-            m, n: total number of rows and columns in the matrix
-            """
-            adjacent_indices = []
-            if x > 0:
-                adjacent_indices.append((x-1, y))
-            if x+1 < m:
-                adjacent_indices.append((x+1, y))
-            if y > 0:
-                adjacent_indices.append((x, y-1))
-            if y+1 < n:
-                adjacent_indices.append((x, y+1))
-            return adjacent_indices
-
-        def is_traversable(node):
-            try:
-                if self._grid[node] == 1:
-                    return False
-            except IndexError:
+    def _is_traversable(self, node):
+        try:
+            if self._grid[node] == 1:
                 return False
-            return True
+        except IndexError:
+            return False
+        return True
 
+    def to_adjacency(self):
         adj = defaultdict(set)
         for x in range(self._grid.shape[0]):
             for y in range(self._grid.shape[1]):
-                neighbors = get_adjacent_indices(x, y, *self._grid.shape)
-                connections = [n for n in neighbors if is_traversable(n)]
+                neighbors = self._get_adjacent_indices(x, y)
+                connections = [n for n in neighbors if self._is_traversable(n)]
                 for cnx in connections:
                     adj[(x, y)].add(cnx)
-                    if is_traversable((x, y)):
+                    if self._is_traversable((x, y)):
                         adj[cnx].add((x, y))
         return adj
+
+    def is_adjacent(self, token1, token2):
+        """
+        Test if token1 is next to token2.
+        """
+        token1_idxs = self[token1]
+        token2_idxs = self[token2]
+        adj_idxs = self._get_adjacent_indices(*token1_idxs)
+        if token2_idxs in adj_idxs:
+            return True
+        return False

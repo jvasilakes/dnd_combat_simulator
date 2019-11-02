@@ -66,7 +66,7 @@ class Player(object):
         roll = roll_die(d=20, n=1, advantage=advantage)
         return (roll, atk.atk_bonus)
 
-    def damage_roll(self, character, attack=None, crit=False):
+    def damage_roll(self, character, attack, crit=False):
         """
         A damage roll for a given attack.
 
@@ -110,7 +110,6 @@ class Player(object):
         goal_pos = grid[character.goal]
         adj = grid.to_adjacency()
         new_pos = astar(pos, goal_pos, adj, moves=1)
-        logging.debug((character, pos, goal_pos, new_pos))
         return new_pos
 
     def move_character(self, character, grid, pos=None):
