@@ -37,6 +37,11 @@ class Attack(object):
 
 
 class Character(object):
+    """
+    A (non) player character.
+
+    :param dict character_data: Character data loaded from JSON.
+    """
 
     _id_counter = 0
     _id_format = "{0:02d}"
@@ -45,6 +50,7 @@ class Character(object):
     def __init__(self, **character_data):
         self.id = self.get_id()
         self._parse_character_data(**character_data)
+        self.goal = None
 
     @classmethod
     def get_id(cls):
@@ -155,6 +161,7 @@ class Character(object):
         :returns: Attack instance
         :rtype: Attack
         """
+        # Return the main hand attack by default.
         if attack is None:
             return self._main_attack
         else:

@@ -1,9 +1,12 @@
 import curses
 import time
+import logging
 
 from .grid import Grid
 from .player import Player
 from .encounter import Encounter
+
+logging.basicConfig(filename="app.log", filemode='a', level=logging.DEBUG)
 
 
 class Engine(object):
@@ -20,25 +23,26 @@ class Engine(object):
         for team in self.teams:
             for character in team.members():
                 grid.add_character(character)
+        logging.debug('\n' + str(grid))
+
+        # Start the encounter
+        enc = Encounter(teams=self.teams, grid=grid, player=self.player)
+        logging.debug(f"Encounter {enc}")
+        logging.debug([c.goal for c in enc.combatants])
+        inits = enc._roll_initiative()
 
         def main(curses_scr):
             gamewin = GameWindow(grid, pos=(0, 0))
+            gamewin.redraw()
             msgwin = MessageWindow(pos=(13, 0))
-            enc = Encounter(teams=self.teams, grid=grid, player=self.player)
-            inits = enc._roll_initiative()
             init_str = ["Initiative"] + inits
             msgwin.redraw('\n'.join([str(init) for init in init_str]))
             msgwin.getch()
             msgwin.redraw(str(enc))
-            while True:
-                for team in self.teams:
-                    for character in team.members():
-                        new_pos = self.player.move_character(character,
-                                                             grid, pos=None)
-                        if new_pos is None:
-                            continue
-                        gamewin.redraw()
-                        time.sleep(0.2)
+            enc.init_combat()
+            for rnd in enc.run_combat():
+                gamewin.redraw()
+                time.sleep(0.001)
 
         curses.wrapper(main)
 

@@ -4,6 +4,7 @@ from collections import defaultdict
 from .character import Character
 from .grid import Grid
 from .player import Player
+from .astar import distance
 
 
 class Team(object):
@@ -57,17 +58,21 @@ class Encounter(object):
     def __init__(self, teams, grid, player):
         self._check_params(teams, grid, player)
         self.teams = teams
-        self.combatants = [m for t in self.teams for m in t.members()]
-        self._team_lookup = self._get_team_lookup()
         self.grid = grid
         self.player = player
         self.stats = EncounterStats()
+        self.combatants = [m for t in self.teams for m in t.members()]
+        self._team_lookup = self._get_team_lookup()
+        self._enemy_lookup = self._get_enemy_lookup()
 
     def _check_params(self, teams, grid, player):
         assert(all([isinstance(t, Team) for t in teams]))
         assert(len(teams) >= 2)
         assert(isinstance(grid, Grid))
         assert(isinstance(player, Player))
+
+    def __str__(self):
+        return ' vs. '.join([t.name for t in self.teams])
 
     def _get_team_lookup(self):
         tm = {}
@@ -76,10 +81,23 @@ class Encounter(object):
                 tm[character.id] = team
         return tm
 
-    def __str__(self):
-        return ' vs. '.join([t.name for t in self.teams])
+    def _get_enemy_lookup(self):
+        enemy_lookup = {}
+        for team in self.teams:
+            enemies = [c for c in self.combatants if self.get_team(c) != team]
+            enemy_lookup[team.name] = enemies
+        return enemy_lookup
 
-    def team(self, player):
+    def _set_combatants_goals(self):
+        for c in self.combatants:
+            team = self._team_lookup[c.id]
+            enemies = self._enemy_lookup[team.name]
+            # Choose an enemy to attack.
+            distances = [distance(self.grid[c], self.grid[e])
+                         for e in enemies]
+            c.goal = enemies[np.argmin(distances)]
+
+    def get_team(self, character):
         """
         Returns the team of this character.
 
@@ -87,50 +105,49 @@ class Encounter(object):
         :returns: The team of this character.
         :rtype: Team
         """
-        return self._team_lookup[player.character.id]
+        return self._team_lookup[character.id]
 
-    def run_combat(self, player, random_seed=None, verbose=0):
+    def init_combat(self):
+        # Who will attack who.
+        self._set_combatants_goals()
+        self.turn_order = self._roll_initiative()
+
+    def run_combat(self, random_seed=None, verbose=0):
         """
         Run simulated combat among all the teams.
 
         :returns: The winning team.
         :rtype: Team
         """
-        # Initialize the battle parameters.
-        np.random.seed(random_seed)
-        turn_order = self._roll_initiative(player)
-        enemy_table = {}
-        for team in self.teams:
-            enemies = [c for c in self.combatants if self.team(c) != team]
-            enemy_table[team.name] = enemies
+        rounds = 0
         while True:
-            for player in turn_order:
-                char = player.character
-                if not char.is_alive:
+            for (character, _) in self.turn_order:
+                if not character.is_alive:
                     continue
-                # Choose an enemy
-                team = self.team(player)
-                enemy = np.random.choice(enemy_table[team.name])
-                # Fight the enemy
-                (is_hit, is_crit, dmg) = self._fight(player, enemy)
-                self.stats.add_damage_dealt(char, dmg)
-                self.stats.add_damage_taken(enemy.character, dmg)
-                self.stats.add_hit(char, is_hit)
-                if verbose > 0:
-                    print(f"{char} --> {enemy.character}: {is_hit}, {is_crit}, {dmg}")  # noqa
-                    print(f"{char} ({char.HP})")
-                    print(f"{enemy.character} ({enemy.character.HP})")
-                    print("---")
-                # Check if the battle has been won.
-                if not enemy.character.is_alive:
-                    enemy_table[team.name].remove(enemy)
-                    if verbose > 0:
-                        print("===")
-                        print(enemy_table[team.name])
-                        print("===")
-                    if enemy_table[team.name] == []:
-                        winner = team
-                        return winner
+                new_pos = self.player.move_character(character, self.grid)
+            rounds += 1
+            yield rounds
+
+                ## Fight the enemy
+                #(is_hit, is_crit, dmg) = self._fight(player, enemy)
+                #self.stats.add_damage_dealt(char, dmg)
+                #self.stats.add_damage_taken(enemy.character, dmg)
+                #self.stats.add_hit(char, is_hit)
+                #if verbose > 0:
+                #    print(f"{char} --> {enemy.character}: {is_hit}, {is_crit}, {dmg}")  # noqa
+                #    print(f"{char} ({char.HP})")
+                #    print(f"{enemy.character} ({enemy.character.HP})")
+                #    print("---")
+                ## Check if the battle has been won.
+                #if not enemy.character.is_alive:
+                #    self._enemy_lookup[team.name].remove(enemy)
+                #    if verbose > 0:
+                #        print("===")
+                #        print(self._enemy_lookup[team.name])
+                #        print("===")
+                #    if self._enemy_lookup[team.name] == []:
+                #        winner = team
+                #        return winner
 
     def _roll_initiative(self):
         """

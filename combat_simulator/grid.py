@@ -1,6 +1,10 @@
+import logging
 import numpy as np
+from collections import defaultdict
 
 from .character import Character
+
+logging.basicConfig(filename="app.log", filemode='w', level=logging.DEBUG)
 
 
 class Grid(object):
@@ -12,7 +16,7 @@ class Grid(object):
         self._icon_map = {}
 
     def __str__(self):
-        hline = ''.join(['━'] * ((2 * self._grid.shape[0]) - 1))
+        hline = ''.join(['━'] * ((2 * self._grid.shape[1]) - 1))
         topline = '┏' + hline + '┓'
         bottomline = '┗' + hline + '┛'
         str_grid = self._grid.astype(str)
@@ -67,6 +71,12 @@ class Grid(object):
             except IndexError:
                 return -1
 
+    def get(self, character_or_pos):
+        try:
+            self[character_or_pos]
+        except KeyError:
+            return None
+
     def __setitem__(self, character, pos):
         """
         Move a character to a new position.
@@ -114,3 +124,40 @@ class Grid(object):
         self._grid[pos] = 1
         self._grid_map[character.id] = pos
         self._icon_map[character.id] = character.icon
+
+    def to_adjacency(self):
+
+        def get_adjacent_indices(x, y, m, n):
+            """
+            x, y: row and columns positions to check
+            m, n: total number of rows and columns in the matrix
+            """
+            adjacent_indices = []
+            if x > 0:
+                adjacent_indices.append((x-1, y))
+            if x+1 < m:
+                adjacent_indices.append((x+1, y))
+            if y > 0:
+                adjacent_indices.append((x, y-1))
+            if y+1 < n:
+                adjacent_indices.append((x, y+1))
+            return adjacent_indices
+
+        def is_traversable(node):
+            try:
+                if self._grid[node] == 1:
+                    return False
+            except IndexError:
+                return False
+            return True
+
+        adj = defaultdict(set)
+        for x in range(self._grid.shape[0]):
+            for y in range(self._grid.shape[1]):
+                neighbors = get_adjacent_indices(x, y, *self._grid.shape)
+                connections = [n for n in neighbors if is_traversable(n)]
+                for cnx in connections:
+                    adj[(x, y)].add(cnx)
+                    if is_traversable((x, y)):
+                        adj[cnx].add((x, y))
+        return adj

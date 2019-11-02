@@ -10,11 +10,11 @@ jake_data = json.load(open(jake_file, 'r'))
 mort_data = json.load(open(mort_file, 'r'))
 
 jakes = [Character(**jake_data) for _ in range(3)]
-mortimer = Character(**mort_data)
+mortimers = [Character(**mort_data) for _ in range(2)]
 
 # Create the teams
 team_jake = Team(members=jakes, name="JakeTeam")
-team_mort = Team(members=[mortimer], name="TeamMort")
+team_mort = Team(members=mortimers, name="TeamMort")
 
 engine = Engine(team_jake, team_mort)
 engine.gameloop()

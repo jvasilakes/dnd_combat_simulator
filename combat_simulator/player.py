@@ -1,4 +1,10 @@
+import logging
+
 from .dice import roll_die
+from .astar import astar
+
+
+logging.basicConfig(filename="app.log", filemode='w', level=logging.DEBUG)
 
 
 class Player(object):
@@ -101,11 +107,11 @@ class Player(object):
         :rtype: tuple
         """
         pos = grid[character]
-        new_pos = (pos[0] + 1, pos[1] + 1)
-        if grid[new_pos] == 1:
-            return pos
-        else:
-            return new_pos
+        goal_pos = grid[character.goal]
+        adj = grid.to_adjacency()
+        new_pos = astar(pos, goal_pos, adj, moves=1)
+        logging.debug((character, pos, goal_pos, new_pos))
+        return new_pos
 
     def move_character(self, character, grid, pos=None):
         """
