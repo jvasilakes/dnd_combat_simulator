@@ -234,12 +234,17 @@ class EncounterStats(object):
 
         :param Character character: The character whose data to summarize.
         """
-        dmg_d = self.average_damage_dealt(character)
-        dmg_t = self.average_damage_taken(character)
+        dmg_d = sum(self.damage_dealt[character.id])
+        avg_dmg_d = self.average_damage_dealt(character)
+        dmg_t = sum(self.damage_taken[character.id])
+        avg_dmg_t = self.average_damage_taken(character)
         n_hits = self.n_hits(character)
         n_atks = self.n_attacks(character)
-        hit_ratio = 100 * (n_hits / n_atks)
-        print(f"Dealt: {dmg_d:.2f}, Taken: {dmg_t:.2f}, Hit Ratio: {n_hits}/{n_atks} ({hit_ratio:.1f}%)")  # noqa
+        if n_atks == 0:
+            hit_ratio = 0
+        else:
+            hit_ratio = 100 * (n_hits / n_atks)
+        print(f"Dealt: {dmg_d} ({avg_dmg_d:.2f}), Taken: {dmg_t} ({avg_dmg_t:.2f}), Hit Ratio: {n_hits}/{n_atks} ({hit_ratio:.1f}%)")  # noqa
 
     def average_damage_dealt(self, character):
         """
