@@ -50,6 +50,7 @@ class Engine(object):
             return
 
         curses.wrapper(main)
+        enc.summary()
 
 
 class GameWindow(object):

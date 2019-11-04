@@ -102,54 +102,6 @@ class Encounter(object):
                          for e in enemies]
             c.goal = enemies[np.argmin(distances)]
 
-    def get_team(self, character):
-        """
-        Returns the team of this character.
-
-        :param Character character: The character whose team to get.
-        :returns: The team of this character.
-        :rtype: Team
-        """
-        return self._team_lookup[character.id]
-
-    def init_combat(self):
-        # Who will attack who.
-        self._set_combatants_goals()
-        self.turn_order = self._roll_initiative()
-
-    def run_combat(self, random_seed=None, verbose=0):
-        """
-        Run simulated combat among all the teams.
-
-        :returns: The winning team.
-        :rtype: Team
-        """
-        rounds = 0
-        won = False
-        while won is False:
-            for (character, _) in self.turn_order:
-                if not character.is_alive:
-                    continue
-                new_pos = self.player.move_character(character, self.grid)  # noqa
-                enemy = character.goal
-                if self.grid.is_adjacent(character, enemy):
-                    is_hit, is_crit, dmg = self._fight(character, enemy)
-                    if is_hit is True:
-                        logging.debug(f"{character} -> {enemy} ({enemy.HP})")
-                    else:
-                        logging.debug(f"{character} X {enemy}")
-                team = self._team_lookup[character.id]
-                if not enemy.is_alive:
-                    self._enemy_lookup[team.name].remove(enemy)
-                    self.grid.rm_character(enemy)
-                    if self._enemy_lookup[team.name] == []:
-                        self.winner = team
-                        won = True
-                        break
-                    self._set_combatants_goals()
-            rounds += 1
-            yield rounds
-
     def _roll_initiative(self):
         """
         Rolls initiative for each character in each team and
@@ -182,10 +134,61 @@ class Encounter(object):
             victim.HP -= dmg
         return (is_hit, is_crit, dmg)
 
+    def get_team(self, character):
+        """
+        Returns the team of this character.
+
+        :param Character character: The character whose team to get.
+        :returns: The team of this character.
+        :rtype: Team
+        """
+        return self._team_lookup[character.id]
+
+    def init_combat(self):
+        # Who will attack who.
+        self._set_combatants_goals()
+        self.turn_order = self._roll_initiative()
+
+    def run_combat(self, random_seed=None, verbose=0):
+        """
+        Run simulated combat among all the teams.
+
+        :returns: The winning team.
+        :rtype: Team
+        """
+        rounds = 0
+        won = False
+        while won is False:
+            for (character, _) in self.turn_order:
+                if not character.is_alive:
+                    continue
+                new_pos = self.player.move_character(character, self.grid)  # noqa
+                enemy = character.goal
+                if self.grid.is_adjacent(character, enemy):
+                    is_hit, is_crit, dmg = self._fight(character, enemy)
+                    self.stats.add_damage_dealt(character, dmg)
+                    self.stats.add_damage_taken(enemy, dmg)
+                    self.stats.add_hit(character, is_hit)
+                    if is_hit is True:
+                        logging.debug(f"{character} -> {enemy} ({enemy.HP})")
+                    else:
+                        logging.debug(f"{character} X {enemy}")
+                team = self._team_lookup[character.id]
+                if not enemy.is_alive:
+                    self._enemy_lookup[team.name].remove(enemy)
+                    self.grid.rm_character(enemy)
+                    if self._enemy_lookup[team.name] == []:
+                        self.winner = team
+                        won = True
+                        break
+                    self._set_combatants_goals()
+            rounds += 1
+            yield rounds
+
     def summary(self):
-        for plyr in self.combatants:
-            print(f"{plyr.character}: ", end='')
-            self.stats.summary(plyr.character)
+        for character in self.combatants:
+            print(f"{character}: ", end='')
+            self.stats.summary(character)
 
 
 class EncounterStats(object):
@@ -244,6 +247,8 @@ class EncounterStats(object):
 
         :param Character character: The character whose data to average.
         """
+        if self.damage_dealt[character.id] == []:
+            return 0
         return np.mean(self.damage_dealt[character.id])
 
     def average_damage_taken(self, character):
@@ -252,6 +257,8 @@ class EncounterStats(object):
 
         :param Character character: The character whose data to average.
         """
+        if self.damage_taken[character.id] == []:
+            return 0
         return np.mean(self.damage_taken[character.id])
 
     def n_attacks(self, character):
