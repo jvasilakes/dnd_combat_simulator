@@ -1,3 +1,5 @@
 __pycache__
 .*.swp
 .DS_store
+5e_combat_simulator_jvasilakes.egg-info
+app.log

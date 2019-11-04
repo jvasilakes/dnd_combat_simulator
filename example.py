@@ -13,16 +13,16 @@ mort_data = json.load(open(mort_file, 'r'))
 comm_data = json.load(open(commoner_file, 'r'))
 orc_data = json.load(open(orc_file, 'r'))
 
-jakes = [Character(**jake_data) for _ in range(2)]
+jakes = [Character(**jake_data) for _ in range(1)]
 mortimers = [Character(**mort_data) for _ in range(1)]
-commoners = [Character(**comm_data) for _ in range(12)]
+commoners = [Character(**comm_data) for _ in range(8)]
 orcs = [Character(**orc_data) for _ in range(4)]
 
 # Create the teams
-team_jake = Team(members=jakes, name="JakeTeam")
-team_mort = Team(members=mortimers, name="TeamMort")
-team_comm = Team(members=commoners, name="AverageJoes")
-team_orc = Team(members=orcs, name="ORC")
+team_jake = Team(members=jakes, name="Jake")
+team_mort = Team(members=mortimers, name="Team Mortimer")
+team_comm = Team(members=commoners, name="Average Joes")
+team_orc = Team(members=orcs, name="ORC BRIGADE")
 
-engine = Engine(team_mort, team_orc)
+engine = Engine(team_jake, team_comm)
 engine.gameloop()

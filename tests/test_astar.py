@@ -1,7 +1,7 @@
-from combat_simulator.grid import Grid
-from combat_simulator.astar import astar
+from .context import combat_simulator as sim
 
-g = Grid((5, 3))
+
+g = sim.Grid((5, 3))
 g._grid[1, 1] = 1 
 g._grid[2, 0] = 1 
 g._grid[2, 1] = 1 
@@ -14,7 +14,7 @@ g._grid[start] = 3
 g._grid[end] = 4
 print("Goal")
 print(g)
-path = astar(start, end, adj, moves=-1)
+path = sim.astar.astar(start, end, adj, moves=-1)
 for (i, n) in enumerate(path):
     g._grid[n] = 2
 g._grid[start] = 3
@@ -24,7 +24,7 @@ print(g)
 print(path)
 
 
-g = Grid((12, 8))
+g = sim.Grid((12, 8))
 g._grid[0, 2] = 1
 g._grid[1, 2:6] = 1
 g._grid[3, 2:8] = 1
@@ -41,7 +41,7 @@ g._grid[start] = 3
 g._grid[end] = 4
 print("Goal")
 print(g)
-path = astar(start, end, adj, moves=-1)
+path = sim.astar.astar(start, end, adj, moves=-1)
 for (i, n) in enumerate(path):
     g._grid[n] = 2
 g._grid[start] = 3
