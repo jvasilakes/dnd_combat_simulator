@@ -36,7 +36,7 @@ class Engine(object):
             msg_size = (50, 30)
             msg_pos = (grid.shape[1]+3, 0)
             msgwin = MessageWindow(size=msg_size, pos=msg_pos)
-            init_str = ["Initiative"] + inits
+            init_str = ["Initiative Order"] + inits
             msgwin.redraw('\n'.join([str(init) for init in init_str]))
             msgwin.getch()
             msgwin.redraw(str(enc))
@@ -44,12 +44,13 @@ class Engine(object):
             logging.debug([c.goal for c in enc.combatants])
             for rnd in enc.run_combat():
                 gamewin.redraw()
-                time.sleep(0.5)
-            msgwin.redraw(str(enc.winner))
+                time.sleep(0.3)
+            msgwin.redraw(f"Winner: {str(enc.winner)}")
             msgwin.getch()
             return
 
         curses.wrapper(main)
+        enc.summary()
 
 
 class GameWindow(object):
