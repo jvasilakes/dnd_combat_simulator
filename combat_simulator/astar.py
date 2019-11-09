@@ -50,4 +50,4 @@ def astar(start, end, adj_matrix, moves=-1):
         return path
     else:
         idx = min(len(path)-1, moves)
-        return path[:idx]
+        return path[:idx+1]

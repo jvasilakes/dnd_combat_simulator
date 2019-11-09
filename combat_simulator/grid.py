@@ -2,7 +2,7 @@ import logging
 import numpy as np
 from collections import defaultdict
 
-from .character import Character
+from .token import Token
 
 logging.basicConfig(filename="app.log", filemode='w', level=logging.DEBUG)
 
@@ -12,8 +12,9 @@ class Grid(object):
     def __init__(self, shape=(10, 10)):
         self.shape = shape
         self._grid = np.zeros(shape, dtype=int)
-        self._grid_map = {}
+        self._tok2pos = {}
         self._icon_map = {}
+        self._pos2tok = defaultdict(None)
 
     def __str__(self):
         hline = ''.join(['━'] * ((2 * self._grid.shape[1]) - 1))
@@ -21,8 +22,8 @@ class Grid(object):
         bottomline = '┗' + hline + '┛'
         str_grid = self._grid.astype(str)
         str_grid[np.where(str_grid == '0')] = '·'
-        for (cid, pos) in self._grid_map.items():
-            icon = self._icon_map[cid]
+        for (tid, pos) in self._tok2pos.items():
+            icon = self._icon_map[tid]
             str_grid[pos] = icon
         lines = [f"┃{' '.join(row)}┃" for row in str_grid]
         lines.insert(0, topline)
@@ -38,6 +39,19 @@ class Grid(object):
         y = self.shape[1] + 2
         return x, y
 
+    def _is_valid(self, pos):
+        """
+        Check if the given position is within the boundaries
+        of the grid.
+        """
+        xlim = self._grid.shape[0] - 1
+        ylim = self._grid.shape[1] - 1
+        x, y = pos
+        if x < 0 or x > xlim:
+            return False
+        if y < 0 or y > ylim:
+            return False
+
     def _enforce_boundaries(self, pos):
         """
         Make sure the position stays within the boundaries
@@ -47,6 +61,8 @@ class Grid(object):
 
         :param tuple(int) pos: The (x, y) position.
         """
+        if self._is_valid(pos):
+            return pos
         xlim = self._grid.shape[0] - 1
         ylim = self._grid.shape[1] - 1
         x, y = pos
@@ -56,75 +72,88 @@ class Grid(object):
         y = min([ylim, y])
         return (x, y)
 
-    def __getitem__(self, character_or_pos):
+    def __getitem__(self, token_or_pos):
         """
-        Get a character's position on the grid.
+        Get a token's position on the grid.
+        Or the token at the given position on the grid.
 
-        :param Character character: The character.
+        :param token_or_pos: The token or position to get.
         """
-        if isinstance(character_or_pos, Character):
-            return self._grid_map[character_or_pos.id]
-        elif isinstance(character_or_pos, tuple):
-            pos = self._enforce_boundaries(character_or_pos)
+        if isinstance(token_or_pos, Token):
+            token = token_or_pos
             try:
-                return self._grid[pos]
-            except IndexError:
-                return -1
+                return self._tok2pos[token.id]
+            except KeyError:
+                msg = f"Token {token} not in grid."
+                raise KeyError(msg)
+        elif isinstance(token_or_pos, tuple):
+            pos = token_or_pos
+            if not len(pos) == 2 and all([isinstance(p, int) for p in pos]):
+                raise ValueError(f"pos must have length 2 and be (int, int).")
+            if self._is_valid(pos) is False:
+                msg = f"Position {pos} invalid for grid of shape {self.shape}"
+                raise KeyError(msg)
+            return self._pos2tok[pos]
+        else:
+            raise ValueError(f"Unsupported key type {type(token_or_pos)}")
 
-    def get(self, character_or_pos):
+    def get(self, token_or_pos):
         try:
-            self[character_or_pos]
+            return self[token_or_pos]
         except KeyError:
             return None
 
-    def __setitem__(self, character, pos):
+    def __setitem__(self, token, pos):
         """
-        Move a character to a new position.
+        Move a token to a new position.
 
-        :param Character character: The character.
+        :param Token token: The token to move.
         :param tuple(int) pos: The new (x, y) position.
         """
-        if not isinstance(character, Character):
-            raise ValueError(f"character must be of type Character.")
+        if not isinstance(token, Token):
+            raise ValueError(f"token must be of type Token.")
         if not len(pos) == 2 and all([isinstance(p, int) for p in pos]):
             raise ValueError(f"pos must have length 2 and be (int, int).")
         pos = self._enforce_boundaries(pos)
-        current_pos = self._grid_map[character.id]
+        current_pos = self._tok2pos[token.id]
         self._grid[current_pos] = 0
         self._grid[pos] = 1
-        self._grid_map[character.id] = pos
+        self._tok2pos[token.id] = pos
+        self._pos2tok[pos] = token
 
-    def rm_character(self, character):
+    def rm_token(self, token):
         """
-        Remove a character from the grid.
+        Remove a token from the grid.
 
-        :param Character character: The character to remove.
+        :param Token token: The token to remove.
         """
-        if not isinstance(character, Character):
-            raise ValueError(f"character must be of type Character.")
-        pos = self._grid_map[character.id]
+        if not isinstance(token, Token):
+            raise ValueError(f"token must be of type Token.")
+        pos = self._tok2pos[token.id]
         self._grid[pos] = 0
-        del self._grid_map[character.id]
-        del self._icon_map[character.id]
+        del self._tok2pos[token.id]
+        del self._icon_map[token.id]
+        self._pos2tok[pos] = None
 
-    def add_character(self, character, pos=None):
+    def add_token(self, token, pos=None):
         """
-        Add a Character instance to the grid. If pos is not specified,
+        Add a Token instance to the grid. If pos is not specified,
         randomly assign it to an unoccupied position.
 
-        :param Character character: The character to add.
-        :param tuple(int) pos: The (x, y) position of the character. Optional.
+        :param Token token: The token to add.
+        :param tuple(int) pos: The (x, y) position of the token. Optional.
         """
-        if not isinstance(character, Character):
-            raise ValueError(f"character must be of type Character.")
+        if not isinstance(token, Token):
+            raise ValueError(f"token must be of type Token.")
         if pos is None:
             idxs = np.where(self._grid == 0)
             x = np.random.choice(idxs[0])
             y = np.random.choice(idxs[1])
             pos = (x, y)
         self._grid[pos] = 1
-        self._grid_map[character.id] = pos
-        self._icon_map[character.id] = character.icon
+        self._tok2pos[token.id] = pos
+        self._icon_map[token.id] = token.icon
+        self._pos2tok[pos] = token
 
     def _get_adjacent_indices(self, x, y):
         """

@@ -25,9 +25,10 @@ def roll_die(d=20, n=1, advantage=0):
     :returns: The result of the roll.
     :rtype: int
     """
-    n = (n, 1)
     if advantage in [1, -1]:
-        n = (n, 2)  # rolls x advantage
+        n = (n, 2)
+    else:
+        n = (n, 1)
     # Sum over the rolls.
     rolls = np.random.randint(1, d, size=n).sum(axis=0)
     # Then take (dis)advantage into account.

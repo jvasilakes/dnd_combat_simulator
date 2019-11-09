@@ -36,19 +36,46 @@ class Attack(object):
         return (int(low), int(high))
 
 
-class Character(object):
+class Token(object):
+    """
+    A generic token.
+    """
+
+    _id_counter = 0
+    _id_format = "{0:02d}"
+
+    def __init__(self, name="", icon="T"):
+        self.id = self._get_id()
+        self.name = name
+        self.icon = icon
+
+    @classmethod
+    def _get_id(cls):
+        cls._id_counter += 1
+        return cls._id_format.format(cls._id_counter)
+
+    def __str__(self):
+        return f"{self.name} ({self.icon})"
+
+    def __repr__(self):
+        return f"{self.name}_{self.id}"
+
+    def copy(self):
+        return self.__class__(name=self.name, icon=self.icon)
+
+
+class Character(Token):
     """
     A (non) player character.
 
     :param dict character_data: Character data loaded from JSON.
     """
 
-    _id_counter = 0
-    _id_format = "{0:02d}"
     _abilities = ["str", "dex", "con", "int", "wis", "cha"]
 
     def __init__(self, **character_data):
-        self.id = self.get_id()
+        super().__init__(name=character_data["name"],
+                         icon=character_data["icon"])
         self._parse_character_data(**character_data)
         self.goal = None
 
@@ -58,8 +85,6 @@ class Character(object):
         return cls._id_format.format(cls._id_counter)
 
     def _parse_character_data(self, **data):
-        self.name = data["name"]
-        self.icon = data["icon"]
         self.str = data["strength"]
         self.dex = data["dexterity"]
         self.con = data["constitution"]
@@ -76,12 +101,6 @@ class Character(object):
         self._main_attack = tmp_atks[0]
         del tmp_atks
         self.num_attacks = data["num_attacks"]
-
-    def __str__(self):
-        return f"{self.name} ({self.icon})"
-
-    def __repr__(self):
-        return f"{self.name}_{self.id}"
 
     @staticmethod
     def _compute_modifier(ability_score):

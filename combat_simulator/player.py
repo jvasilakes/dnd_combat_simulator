@@ -109,7 +109,8 @@ class Player(object):
         pos = grid[character]
         goal_pos = grid[character.goal]
         adj = grid.to_adjacency()
-        new_pos = astar(pos, goal_pos, adj, moves=1)
+        path = astar(pos, goal_pos, adj, moves=1)
+        new_pos = path[-1]
         return new_pos
 
     def move_character(self, character, grid, pos=None):

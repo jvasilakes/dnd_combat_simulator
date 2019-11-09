@@ -22,7 +22,7 @@ class Engine(object):
         grid = Grid(shape=(20, 20))
         for team in self.teams:
             for character in team.members():
-                grid.add_character(character)
+                grid.add_token(character)
         logging.debug('\n' + str(grid))
 
         # Start the encounter

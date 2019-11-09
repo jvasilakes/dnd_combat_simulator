@@ -2,7 +2,7 @@ import logging
 import numpy as np
 from collections import defaultdict
 
-from .character import Character
+from .token import Character
 from .grid import Grid
 from .player import Player
 from .astar import distance
@@ -176,7 +176,7 @@ class Encounter(object):
                 team = self._team_lookup[character.id]
                 if not enemy.is_alive:
                     self._enemy_lookup[team.name].remove(enemy)
-                    self.grid.rm_character(enemy)
+                    self.grid.rm_token(enemy)
                     if self._enemy_lookup[team.name] == []:
                         self.winner = team
                         won = True
