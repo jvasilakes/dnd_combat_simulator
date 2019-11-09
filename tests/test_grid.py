@@ -1,4 +1,4 @@
-from context import combat_simulator
+from .context import combat_simulator
 
 
 Grid = combat_simulator.grid.Grid
