@@ -43,9 +43,11 @@ def astar(start, end, adj_matrix, moves=-1):
     while current != start:
         path.append(came_from[current])
         current = came_from[current]
+    # We built it from finish to start,
+    # but we report it from start to finish.
     path = path[::-1]
     if moves == -1:
         return path
     else:
         idx = min(len(path)-1, moves)
-        return path[idx]
+        return path[:idx]
