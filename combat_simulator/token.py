@@ -44,7 +44,7 @@ class Token(object):
     _id_counter = 0
     _id_format = "{0:02d}"
 
-    def __init__(self, name="", icon="T"):
+    def __init__(self, name="token", icon="t"):
         self.id = self._get_id()
         self.name = name
         self.icon = icon
