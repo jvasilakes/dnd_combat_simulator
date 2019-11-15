@@ -76,31 +76,30 @@ class Character(Token):
     def __init__(self, **character_data):
         super().__init__(name=character_data["name"],
                          icon=character_data["icon"])
-        self._parse_character_data(**character_data)
+        self._orig_char_data = character_data
+        try:
+            self._parse_character_data(**character_data)
+        except Exception as e:
+            raise ValueError(f"The following error was raised when parsing the character JSON: {e}")  # noqa
         self.goal = None
 
-    @classmethod
-    def get_id(cls):
-        cls._id_counter += 1
-        return cls._id_format.format(cls._id_counter)
-
     def _parse_character_data(self, **data):
-        self.str = data["strength"]
-        self.dex = data["dexterity"]
-        self.con = data["constitution"]
-        self.int = data["intelligence"]
-        self.wis = data["wisdom"]
-        self.cha = data["charisma"]
-        self.ac = data["ac"]
-        self._hp_max = data["hp"]
-        self._hp = data["hp"]
-        self._speed_max = data["speed"]
-        self._speed = data["speed"]
+        self.str = int(data["strength"])
+        self.dex = int(data["dexterity"])
+        self.con = int(data["constitution"])
+        self.int = int(data["intelligence"])
+        self.wis = int(data["wisdom"])
+        self.cha = int(data["charisma"])
+        self.ac = int(data["ac"])
+        self._hp_max = int(data["hp"])
+        self._hp = int(data["hp"])
+        self._speed_max = int(data["speed"])
+        self._speed = int(data["speed"])
         tmp_atks = [Attack(**atk_data) for atk_data in data["attacks"]]
         self.attacks = dict([(atk.name, atk) for atk in tmp_atks])
         self._main_attack = tmp_atks[0]
         del tmp_atks
-        self.num_attacks = data["num_attacks"]
+        self.num_attacks = int(data["num_attacks"])
 
     @staticmethod
     def _compute_modifier(ability_score):
@@ -187,13 +186,17 @@ class Character(Token):
             if isinstance(attack, Attack):
                 return attack
             elif isinstance(attack, str):
-                return self.attacks[attack]
+                try:
+                    return self.attacks[attack]
+                except KeyError:
+                    msg = f"Unknown attack '{attack}:{type(attack)}'."
+                    raise ValueError(msg)
             else:
-                raise ValueError(f"Unknown attack '{attack}:{type(attack)}'.")
+                msg = "Argument to get_attack must be Attack of str."
+                raise ValueError(msg)
 
     def reset(self):
         """
         Reset this character's attributes.
         """
-        self.HP = self._hp_max
-        self.speed = self._speed_max
+        self._parse_character_data(**self._orig_char_data)
