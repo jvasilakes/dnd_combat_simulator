@@ -1,12 +1,12 @@
 import curses
 import time
-import logging
+import pandas as pd
+from tqdm import trange
+from collections import defaultdict
 
 from .grid import Grid
 from .player import Player
 from .encounter import Encounter
-
-logging.basicConfig(filename="app.log", filemode='a', level=logging.DEBUG)
 
 
 class Engine(object):
@@ -15,42 +15,67 @@ class Engine(object):
         self.teams = teams
         self.player = Player()
 
-    def gameloop(self):
+    def gameloop(self, visual=True, num_encounters=1000, speed=0.3):
 
-        # Initialize the grid and add the players
-        # to random positions.
-        grid = Grid(shape=(20, 20))
-        for team in self.teams:
-            for character in team.members():
-                grid.add_token(character)
-        logging.debug('\n' + str(grid))
+        def initialize_encounter():
+            # Initialize the grid and add the players
+            # to random positions.
+            grid = Grid(shape=(20, 20))
+            for team in self.teams:
+                for character in team.members():
+                    if not character.is_alive:
+                        character.reset()
+                    grid.add_token(character)
 
-        # Start the encounter
-        enc = Encounter(teams=self.teams, grid=grid, player=self.player)
-        logging.debug(f"Encounter {enc}")
-        inits = enc._roll_initiative()
+            # Start the encounter
+            enc = Encounter(teams=self.teams, grid=grid, player=self.player)
+            enc.init_combat()
+            return enc
 
-        def main(curses_scr):
-            gamewin = GameWindow(grid, pos=(0, 0))
+        def main_visual(curses_scr):
+            enc = initialize_encounter()
+            gamewin = GameWindow(enc.grid, pos=(0, 0))
             gamewin.redraw()
             msg_size = (50, 30)
-            msg_pos = (grid.shape[1]+3, 0)
+            msg_pos = (enc.grid.shape[1]+3, 0)
             msgwin = MessageWindow(size=msg_size, pos=msg_pos)
-            init_str = ["Initiative Order"] + inits
+
+            init_str = ["Initiative Order"] + enc.turn_order
             msgwin.redraw('\n'.join([str(init) for init in init_str]))
             msgwin.getch()
             msgwin.redraw(str(enc))
-            enc.init_combat()
-            logging.debug([c.goal for c in enc.combatants])
             for rnd in enc.run_combat():
                 gamewin.redraw()
-                time.sleep(0.3)
+                time.sleep(speed)
             msgwin.redraw(f"Winner: {str(enc.winner)}")
             msgwin.getch()
-            return
+            return enc
 
-        curses.wrapper(main)
-        enc.summary()
+        def main_background():
+            log = None
+            winners = defaultdict(int)
+            for _ in trange(num_encounters):
+                enc = initialize_encounter()
+                list(enc.run_combat())
+                winners[enc.winner.name] += 1
+                log = pd.concat([log, enc.log])
+                del enc
+            return log, winners
+
+        if visual is True:
+            enc = curses.wrapper(main_visual)
+            enc.summary()
+        else:
+            results, winners = main_background()
+#            results.to_csv("out.csv", index=False, header=True)
+            for ((name, cid), group) in results.groupby(["attacker_name", "attacker_id"]):  # noqa
+                dpr = group[group["hit"] == True]["dmg"].mean()  # noqa
+                hit_ratio = group["hit"].sum() / group.shape[0]
+                print(f"{name} ({cid}): DPR ({dpr:.2f}), hit ratio ({hit_ratio:.2f})")  # noqa
+            print("Wins")
+            for team in self.teams:
+                percentage = winners[team.name] / num_encounters
+                print(f"{team.name}: {winners[team.name]} / {num_encounters} ({percentage:.2f})")  # noqa
 
 
 class GameWindow(object):

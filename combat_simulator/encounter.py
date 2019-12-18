@@ -1,13 +1,10 @@
-import logging
 import numpy as np
-from collections import defaultdict
+import pandas as pd
 
 from .token import Character
 from .grid import Grid
 from .player import Player
 from .astar import distance
-
-logging.basicConfig(filename="app.log", filemode='w', level=logging.DEBUG)
 
 
 class Team(object):
@@ -58,13 +55,17 @@ class Encounter(object):
     :param list teams: A list of Team instances.
     """
 
+    _id_counter = 0
+
     def __init__(self, teams, grid, player):
         self._check_params(teams, grid, player)
+        self._log = []
+        self.id = self._get_id()
         self.teams = teams
         self.grid = grid
         self.player = player
-        self.stats = EncounterStats()
         self.combatants = [m for t in self.teams for m in t.members()]
+        self.winner = None
         self._team_lookup = self._get_team_lookup()
         self._enemy_lookup = self._get_enemy_lookup()
 
@@ -73,6 +74,11 @@ class Encounter(object):
         assert(len(teams) >= 2)
         assert(isinstance(grid, Grid))
         assert(isinstance(player, Player))
+
+    @classmethod
+    def _get_id(cls):
+        cls._id_counter += 1
+        return f"ENC{cls._id_counter:015d}"
 
     def __str__(self):
         return ' vs. '.join([t.name for t in self.teams])
@@ -166,13 +172,14 @@ class Encounter(object):
                 enemy = character.goal
                 if self.grid.is_adjacent(character, enemy):
                     is_hit, is_crit, dmg = self._fight(character, enemy)
-                    self.stats.add_damage_dealt(character, dmg)
-                    self.stats.add_damage_taken(enemy, dmg)
-                    self.stats.add_hit(character, is_hit)
-                    if is_hit is True:
-                        logging.debug(f"{character} -> {enemy} ({enemy.HP})")
-                    else:
-                        logging.debug(f"{character} X {enemy}")
+                    atk = {"encounter_id": self.id,
+                           "attacker_id": character.id,
+                           "attacker_name": character.name,
+                           "victim_id": enemy.id,
+                           "victim_name": enemy.name,
+                           "hit": is_hit,
+                           "dmg": dmg}
+                    self._log.append(atk)
                 team = self._team_lookup[character.id]
                 if not enemy.is_alive:
                     self._enemy_lookup[team.name].remove(enemy)
@@ -185,99 +192,12 @@ class Encounter(object):
             rounds += 1
             yield rounds
 
+    @property
+    def log(self):
+        return pd.DataFrame(self._log)
+
     def summary(self):
-        for character in self.combatants:
-            print(f"{character}: ", end='')
-            self.stats.summary(character)
-
-
-class EncounterStats(object):
-    """
-    Holds statistics for each combatant in an encounter.
-    """
-
-    def __init__(self):
-        self.damage_dealt = defaultdict(list)
-        self.damage_taken = defaultdict(list)
-        self.hits = defaultdict(list)
-
-    def add_damage_dealt(self, character, value):
-        """
-        Update the damage dealt by this character.
-
-        :param Character character: The character whose data to update.
-        :param int value: The amount of damage dealt.
-        """
-        self.damage_dealt[character.id].append(value)
-
-    def add_damage_taken(self, character, value):
-        """
-        Update the damage taken by this character.
-
-        :param Character character: The character whose data to update.
-        :param int value: The amount of damage taken.
-        """
-        self.damage_taken[character.id].append(value)
-
-    def add_hit(self, character, value):
-        """
-        Add a hit value for this character.
-
-        :param Character character: The character whose data to update.
-        :param bool value: Whether the character hit or not.
-        """
-        self.hits[character.id].append(value)
-
-    def summary(self, character):
-        """
-        Summarize the stats of this character.
-
-        :param Character character: The character whose data to summarize.
-        """
-        dmg_d = sum(self.damage_dealt[character.id])
-        avg_dmg_d = self.average_damage_dealt(character)
-        dmg_t = sum(self.damage_taken[character.id])
-        avg_dmg_t = self.average_damage_taken(character)
-        n_hits = self.n_hits(character)
-        n_atks = self.n_attacks(character)
-        if n_atks == 0:
-            hit_ratio = 0
-        else:
-            hit_ratio = 100 * (n_hits / n_atks)
-        print(f"Dealt: {dmg_d} ({avg_dmg_d:.2f}), Taken: {dmg_t} ({avg_dmg_t:.2f}), Hit Ratio: {n_hits}/{n_atks} ({hit_ratio:.1f}%)")  # noqa
-
-    def average_damage_dealt(self, character):
-        """
-        Compute the average damage dealt by this character.
-
-        :param Character character: The character whose data to average.
-        """
-        if self.damage_dealt[character.id] == []:
-            return 0
-        return np.mean(self.damage_dealt[character.id])
-
-    def average_damage_taken(self, character):
-        """
-        Compute the average damage taken by this character.
-
-        :param Character character: The character whose data to average.
-        """
-        if self.damage_taken[character.id] == []:
-            return 0
-        return np.mean(self.damage_taken[character.id])
-
-    def n_attacks(self, character):
-        """
-        The number of attacks this character attempted.
-
-        :param Character character: The character whose data to return.
-        """
-        return len(self.hits[character.id])
-
-    def n_hits(self, character):
-        """
-        The number of hits this character achieved.
-
-        :param Character character: The character whose data to return.
-        """
-        return np.sum(self.hits[character.id])
+        for ((name, cid), group) in self.log.groupby(["attacker_name", "attacker_id"]):  # noqa
+            dpr = group[group["hit"] == True]["dmg"].mean()  # noqa
+            hit_ratio = group["hit"].sum() / group.shape[0]
+            print(f"{name} ({cid}): DPR ({dpr:.2f}), hit ratio ({hit_ratio:.2f})")  # noqa
