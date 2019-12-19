@@ -1,0 +1,14 @@
+{"name": "Jake vs. Zombies",
+ "team1": {"name": "Team Jake",
+	   "members": ["character.Jake",
+		       "character.Jake"]
+ 	  },
+ "team2": {"name": "Zombie Patrol",
+	   "members": ["monster.Zombie",
+		       "monster.Zombie",
+		       "monster.Zombie",
+		       "monster.Zombie",
+		       "monster.Zombie",
+		       "monster.Zombie"]
+ 	  }
+}

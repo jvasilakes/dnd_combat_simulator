@@ -3,27 +3,35 @@
 ### Usage
 
 ```
-python example.py --num_encounters 50
+python run_scenario.py --scenario_file scenarios/example.json --num_encounters 50
 
-Commoner (03): DPR (2.20), hit ratio (0.49)
-Commoner (04): DPR (1.94), hit ratio (0.37)
-Commoner (05): DPR (2.08), hit ratio (0.37)
-Commoner (06): DPR (2.25), hit ratio (0.42)
-Commoner (07): DPR (2.25), hit ratio (0.49)
-Commoner (08): DPR (2.10), hit ratio (0.44)
-Commoner (09): DPR (1.93), hit ratio (0.46)
-Commoner (10): DPR (1.85), hit ratio (0.38)
-Jake (01): DPR (6.89), hit ratio (0.69)
+100%|███████████████████████████████████████████████████████████████████████████████████| 50/50 [00:14<00:00,  3.39it/s]
+Jake (01): DPR (6.97), hit ratio (0.79)
+Jake (02): DPR (6.89), hit ratio (0.81)
+Zombie (03): DPR (4.11), hit ratio (0.50)
+Zombie (04): DPR (4.12), hit ratio (0.50)
+Zombie (05): DPR (4.01), hit ratio (0.44)
+Zombie (06): DPR (3.84), hit ratio (0.45)
+Zombie (07): DPR (4.08), hit ratio (0.50)
+Zombie (08): DPR (4.20), hit ratio (0.45)
 Wins
-Team of Jakes: 34 / 50 (0.68)
-Average Joes: 16 / 50 (0.32)
+Team Jake: 15 / 50 (0.30)
+Zombie Patrol: 35 / 50 (0.70)
 ```
 
 
 ```
-python example.py --visual
+python --scenario_file scenarios/example.json --visual
 ```
 
 <p align="center">
   <img width="600" src="https://github.com/jvasilakes/dnd_combat_simulator/blob/master/graphics/battle.svg">
 </p>
+
+Recorded with asciinema and svg-term-cli
+
+```
+asciinema rec
+~/opt/miniconda3/envs/5e/bin/python3.7 run_scenario.py --scenario_file scenarios/example.json --visual
+cat .cat | svg-term --out graphics/battle.svg
+```

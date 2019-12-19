@@ -63,6 +63,8 @@ class Player(object):
         :rtype: (int, int)
         """
         atk = character.get_attack(attack)
+        if atk is None:
+            return (0, 0)
         roll = roll_die(d=20, n=1, advantage=advantage)
         return (roll, atk.atk_bonus)
 
@@ -78,6 +80,8 @@ class Player(object):
         :rtype: (int, int)
         """
         atk = character.get_attack(attack)
+        if atk is None:
+            return (0, 0)
         total_roll = 0
         for (d, n) in atk.dmg_rolls:
             if crit is True:

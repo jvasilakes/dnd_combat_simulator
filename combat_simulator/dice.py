@@ -11,7 +11,7 @@ def parse_die(die_roll):
     :returns: The die and the roll.
     :rtype: (int, int)
     """
-    (n, d) = die_roll.lower().split('d')
+    (n, d) = die_roll.strip().lower().split('d')
     return (int(d), int(n))
 
 

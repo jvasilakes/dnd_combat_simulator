@@ -100,8 +100,12 @@ class Character(Token):
         self._speed_max = int(data["speed"])
         self._speed = int(data["speed"])
         tmp_atks = [Attack(**atk_data) for atk_data in data["attacks"]]
-        self.attacks = dict([(atk.name, atk) for atk in tmp_atks])
-        self._main_attack = tmp_atks[0]
+        if tmp_atks == []:
+            self.attacks = {}
+            self._main_attack = None
+        else:
+            self.attacks = dict([(atk.name, atk) for atk in tmp_atks])
+            self._main_attack = tmp_atks[0]
         del tmp_atks
         self.num_attacks = int(data["num_attacks"])
 
