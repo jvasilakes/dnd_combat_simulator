@@ -25,5 +25,5 @@ def test_attack_damage():
         monster = Character(**md)
         atk_roll = player.attack_roll(monster)
         assert atk_roll is not None
-        dmg_roll = player.damage_roll(monster)
+        dmg_roll = player.damage_roll(monster)  # noqa unused variable
         assert atk_roll is not None
