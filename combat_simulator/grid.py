@@ -1,10 +1,7 @@
-import logging
 import numpy as np
 from collections import defaultdict
 
 from .token import Token
-
-logging.basicConfig(filename="app.log", filemode='w', level=logging.DEBUG)
 
 
 class Grid(object):

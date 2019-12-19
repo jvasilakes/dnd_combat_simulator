@@ -1,10 +1,5 @@
-import logging
-
 from .dice import roll_die
 from .astar import astar
-
-
-logging.basicConfig(filename="app.log", filemode='w', level=logging.DEBUG)
 
 
 class Player(object):

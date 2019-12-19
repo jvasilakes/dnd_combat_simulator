@@ -1,8 +1,3 @@
-import logging
-
-logging.basicConfig(filename="app.log", filemode='w', level=logging.DEBUG)
-
-
 def distance(a, b):
     (x1, y1) = a
     (x2, y2) = b
