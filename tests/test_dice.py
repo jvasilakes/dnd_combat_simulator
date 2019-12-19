@@ -9,6 +9,7 @@ dice = combat_simulator.dice
 def test_parse_die():
     assert dice.parse_die("1d8") == (8, 1)
     assert dice.parse_die("12d3") == (3, 12)
+    assert dice.parse_die(" 12d3 ") == (3, 12)
 
 
 def test_roll():
