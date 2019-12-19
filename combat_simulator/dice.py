@@ -25,6 +25,8 @@ def roll_die(d=20, n=1, advantage=0):
     :returns: The result of the roll.
     :rtype: int
     """
+    if d == 1:
+        return 1
     if advantage in [1, -1]:
         n = (n, 2)
     else:
