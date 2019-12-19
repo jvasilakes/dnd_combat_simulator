@@ -4,7 +4,7 @@ python:
 install:
   - pip install .
 before_script:
-  - pip install flake8 pytest-cov coveralls
+  - pip install -r requirements.txt
 script:
   - flake8 combat_simulator/ tests/
   - py.test --cov=combat_simulator/ tests/
