@@ -15,7 +15,7 @@
           "type": "",
           "range": "0/0",
 	  "atk_bonus": 0,
-          "dmg_roll": "",
+          "dmg_rolls": ["1d4"],
 	  "dmg_bonus": 0,
 	  "dmg_type": "",
 	  "properties": ["thrown"]

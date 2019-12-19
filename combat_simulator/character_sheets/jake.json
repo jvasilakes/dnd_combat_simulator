@@ -15,7 +15,7 @@
           "type": "melee",
 	  "range": "5/5",
 	  "atk_bonus": 3,
-          "dmg_roll": "1d6",
+          "dmg_rolls": ["1d6"],
 	  "dmg_bonus": 4,
 	  "dmg_type": "piercing",
 	  "properties": ["thrown"]

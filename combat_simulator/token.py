@@ -9,9 +9,12 @@ class Attack(object):
 
     name: The name of the attack. E.g. "Javelin"
     type: The type of attack. E.g. "thrown"
-    dmg_roll: The damage roll this attack deals. E.g. "1d6"
+    range: The minimum and maximum range of this attack. E.g. "5/5".
+    atk_bonus: How much to add to the attack roll.
+    dmg_rolls: The damage roll(s) this attack deals. E.g. ["1d6", "2d4"]
     dmg_bonus: How much additional damage to add. E.g. 4
     dmg_type: The type of damage this attack deals. E.g. "piercing"
+    properties: E.g. "Thrown".
     """
 
     def __init__(self, **attack_data):
@@ -22,7 +25,8 @@ class Attack(object):
         self.type = data["type"]
         self.range = self._parse_range(data["range"])
         self.atk_bonus = data["atk_bonus"]
-        self.dmg_roll = dice.parse_die(data["dmg_roll"])
+        self.dmg_rolls = [dice.parse_die(die_str)
+                          for die_str in data["dmg_rolls"]]
         self.dmg_bonus = data["dmg_bonus"]
         self.dmg_type = data["dmg_type"]
         self.properties = data["properties"]

@@ -15,7 +15,7 @@
           "type": "melee",
           "range": "5/5",
 	  "atk_bonus": 1,
-          "dmg_roll": "1d4",
+          "dmg_rolls": ["1d4"],
 	  "dmg_bonus": 1,
 	  "dmg_type": "bludgeoning",
 	  "properties": []

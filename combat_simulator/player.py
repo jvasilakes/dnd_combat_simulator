@@ -66,7 +66,7 @@ class Player(object):
         roll = roll_die(d=20, n=1, advantage=advantage)
         return (roll, atk.atk_bonus)
 
-    def damage_roll(self, character, attack, crit=False):
+    def damage_roll(self, character, attack=None, crit=False):
         """
         A damage roll for a given attack.
 
@@ -78,11 +78,12 @@ class Player(object):
         :rtype: (int, int)
         """
         atk = character.get_attack(attack)
-        d, n = atk.dmg_roll
-        if crit is True:
-            n *= 2
-        roll = roll_die(d=d, n=n)
-        return (roll, atk.dmg_bonus)
+        total_roll = 0
+        for (d, n) in atk.dmg_rolls:
+            if crit is True:
+                n *= 2
+            total_roll += roll_die(d=d, n=n)
+        return (total_roll, atk.dmg_bonus)
 
     def choose_attack(self, character, target=None):
         """
