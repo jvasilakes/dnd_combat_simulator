@@ -20,6 +20,8 @@ def astar(start, end, adj_matrix, moves=-1):
     frontier = [start]
     came_from = {}
 
+    moves = int(moves)
+
     while frontier != []:
         current = frontier.pop(0)
         adjacents = [n for n in adj_matrix[current] if n not in came_from]

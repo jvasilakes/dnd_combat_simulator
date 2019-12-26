@@ -40,7 +40,8 @@ def run(scenario_file, num_encounters, visual, speed):
     curdir = os.path.dirname(__file__)
     char_sheets_dir = os.path.join(curdir, "assets/character_sheets")
     chars_by_name = load_character_sheets(char_sheets_dir)
-    monsters_file = os.path.join(curdir, "assets/5e_SRD_monsters.jsonl")
+    monsters_file = os.path.join(curdir,
+                                 "assets/5e_SRD_monsters_formatted.jsonl")
     monsters_by_name = load_monsters(monsters_file)
 
     scenario_data = json.load(open(scenario_file))

@@ -109,7 +109,8 @@ class Player(object):
         pos = grid[character]
         goal_pos = grid[character.goal]
         adj = grid.to_adjacency()
-        path = astar(pos, goal_pos, adj, moves=1)
+        num_moves = character.speed / 5
+        path = astar(pos, goal_pos, adj, moves=num_moves)
         new_pos = path[-1]
         return new_pos
 
@@ -129,6 +130,6 @@ class Player(object):
             pos = self._find_best_position(character, grid)
         if pos != current_pos:
             grid[character] = pos
-            return pos
+            return grid[character]
         else:
             return None

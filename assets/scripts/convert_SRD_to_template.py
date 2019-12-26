@@ -45,7 +45,7 @@ def main(infile, outfile):
 
 
 def parse_speed(monster_data):
-    speeds = re.findall(r'.*\s?([0-9]+)\s?ft\.', monster_data["speed"])
+    speeds = re.findall(r'\s?([0-9]+)\s?ft\.', monster_data["speed"])
     return int(speeds[0])
 
 
