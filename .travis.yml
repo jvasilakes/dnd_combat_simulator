@@ -7,7 +7,7 @@ before_script:
   - pip install flake8 pytest-cov coverage==4.5.4 coveralls 
   - pip install -r requirements.txt
 script:
-  - flake8 combat_simulator/ tests/
+  - flake8 combat_simulator/ setup.py tests/
   - py.test --cov=combat_simulator/ tests/
 after_success:
   - coveralls
