@@ -8,8 +8,9 @@ Token = combat_simulator.token.Token
 
 
 def test_screen_size():
-    assert Grid((3, 3)).screen_size == (8, 5)
-    assert Grid((3, 1)).screen_size == (8, 3)
+    assert Grid((3, 3)).screen_size == (5, 8)
+    assert Grid((3, 1)).screen_size == (5, 4)
+    assert Grid((10, 50)).screen_size == (12, 102)
 
 
 def test_grid_print():

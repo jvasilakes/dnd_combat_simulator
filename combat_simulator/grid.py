@@ -5,16 +5,19 @@ from .token import Token
 
 
 class Grid(object):
+    """
+    :param tuple shape: (y, x) size of the grid.
+    """
 
     def __init__(self, shape=(10, 10)):
         self.shape = shape
         self._grid = np.zeros(shape, dtype=int)
         self._tok2pos = {}
-        self._icon_map = {}
         self._pos2tok = defaultdict(None)
+        self._icon_map = {}
 
     def __str__(self):
-        hline = ''.join(['━'] * ((2 * self._grid.shape[1]) - 1))
+        hline = ''.join(['━'] * ((2 * self.shape[1]) - 1))
         topline = '┏' + hline + '┓'
         bottomline = '┗' + hline + '┛'
         str_grid = self._grid.astype(str)
@@ -28,26 +31,29 @@ class Grid(object):
         return '\n'.join(lines)
 
     def __repr__(self):
-        return f"{self._grid.shape}"
+        return f"{self.shape}"
 
     @property
     def screen_size(self):
-        x = (2 * self._grid.shape[0]) + 2
-        y = self.shape[1] + 2
-        return x, y
+        y = self.shape[0] + 2
+        x = (2 * self._grid.shape[1]) + 2
+        return y, x
 
     def _is_valid(self, pos):
         """
         Check if the given position is within the boundaries
         of the grid.
+
+        :param tuple(int) pos: The (y, x) position.
         """
-        xlim = self._grid.shape[0] - 1
-        ylim = self._grid.shape[1] - 1
-        x, y = pos
-        if x < 0 or x > xlim:
-            return False
+        ylim = self._grid.shape[0] - 1
+        xlim = self._grid.shape[1] - 1
+        y, x = pos
         if y < 0 or y > ylim:
             return False
+        if x < 0 or x > xlim:
+            return False
+        return True
 
     def _enforce_boundaries(self, pos):
         """
@@ -56,18 +62,18 @@ class Grid(object):
         position is outside the grid, put it on the closest
         edge instead.
 
-        :param tuple(int) pos: The (x, y) position.
+        :param tuple(int) pos: The (y, x) position.
         """
         if self._is_valid(pos):
             return pos
-        xlim = self._grid.shape[0] - 1
-        ylim = self._grid.shape[1] - 1
-        x, y = pos
-        x = max([0, x])
-        x = min([xlim, x])
+        ylim = self._grid.shape[0] - 1
+        xlim = self._grid.shape[1] - 1
+        y, x = pos
         y = max([0, y])
         y = min([ylim, y])
-        return (x, y)
+        x = max([0, x])
+        x = min([xlim, x])
+        return (y, x)
 
     def __getitem__(self, token_or_pos):
         """
@@ -90,7 +96,7 @@ class Grid(object):
             if self._is_valid(pos) is False:
                 msg = f"Position {pos} invalid for grid of shape {self.shape}"
                 raise KeyError(msg)
-            return self._pos2tok[pos]
+            return self._pos2tok.get(pos)
         else:
             raise ValueError(f"Unsupported key type {type(token_or_pos)}")
 
@@ -105,7 +111,7 @@ class Grid(object):
         Move a token to a new position.
 
         :param Token token: The token to move.
-        :param tuple(int) pos: The new (x, y) position.
+        :param tuple(int) pos: The new (y, x) position.
         """
         if not isinstance(token, Token):
             raise ValueError(f"token must be of type Token.")
@@ -138,34 +144,36 @@ class Grid(object):
         randomly assign it to an unoccupied position.
 
         :param Token token: The token to add.
-        :param tuple(int) pos: The (x, y) position of the token. Optional.
+        :param tuple(int) pos: The (y, x) position of the token. Optional.
         """
         if not isinstance(token, Token):
             raise ValueError(f"token must be of type Token.")
         if pos is None:
             idxs = np.where(self._grid == 0)
-            x = np.random.choice(idxs[0])
-            y = np.random.choice(idxs[1])
-            pos = (x, y)
+            y = np.random.choice(idxs[0])
+            x = np.random.choice(idxs[1])
+            pos = (y, x)
+        pos = self._enforce_boundaries(pos)
         self._grid[pos] = 1
         self._tok2pos[token.id] = pos
         self._icon_map[token.id] = token.icon
         self._pos2tok[pos] = token
 
-    def _get_adjacent_indices(self, x, y):
+    def _get_adjacent_indices(self, pos):
         """
-        x, y: row and columns positions to check
+        :param tuple(int) pos: The (y, x) position of the token. Optional.
         """
         m, n = self._grid.shape
         adjacent_indices = []
-        if x > 0:
-            adjacent_indices.append((x-1, y))
-        if x+1 < m:
-            adjacent_indices.append((x+1, y))
+        y, x = pos
         if y > 0:
-            adjacent_indices.append((x, y-1))
-        if y+1 < n:
-            adjacent_indices.append((x, y+1))
+            adjacent_indices.append((y-1, x))
+        if y+1 < m:
+            adjacent_indices.append((y+1, x))
+        if x > 0:
+            adjacent_indices.append((y, x-1))
+        if x+1 < n:
+            adjacent_indices.append((y, x+1))
         return adjacent_indices
 
     def _is_traversable(self, node):
@@ -178,14 +186,14 @@ class Grid(object):
 
     def to_adjacency(self):
         adj = defaultdict(set)
-        for x in range(self._grid.shape[0]):
-            for y in range(self._grid.shape[1]):
-                neighbors = self._get_adjacent_indices(x, y)
+        for y in range(self._grid.shape[0]):
+            for x in range(self._grid.shape[1]):
+                neighbors = self._get_adjacent_indices((y, x))
                 connections = [n for n in neighbors if self._is_traversable(n)]
                 for cnx in connections:
-                    adj[(x, y)].add(cnx)
-                    if self._is_traversable((x, y)):
-                        adj[cnx].add((x, y))
+                    adj[(y, x)].add(cnx)
+                    if self._is_traversable((y, x)):
+                        adj[cnx].add((y, x))
         return adj
 
     def is_adjacent(self, token1, token2):
@@ -194,7 +202,7 @@ class Grid(object):
         """
         token1_idxs = self[token1]
         token2_idxs = self[token2]
-        adj_idxs = self._get_adjacent_indices(*token1_idxs)
+        adj_idxs = self._get_adjacent_indices(token1_idxs)
         if token2_idxs in adj_idxs:
             return True
         return False

@@ -11,33 +11,37 @@ from .encounter import Encounter
 
 class Engine(object):
 
-    def __init__(self, *teams):
+    def __init__(self, *teams, grid=None):
+        if grid is None:
+            raise ValueError("grid must be specified.")
         self.teams = teams
         self.player = Player()
+        assert(isinstance(grid, Grid))
+        self.grid = grid
 
     def gameloop(self, visual=True, num_encounters=1000, speed=0.3):
 
         def initialize_encounter():
             # Initialize the grid and add the players
             # to random positions.
-            grid = Grid(shape=(20, 20))
             for team in self.teams:
                 for character in team.members():
                     if not character.is_alive:
                         character.reset()
-                    grid.add_token(character)
+                    self.grid.add_token(character)
 
             # Start the encounter
-            enc = Encounter(teams=self.teams, grid=grid, player=self.player)
+            enc = Encounter(teams=self.teams, grid=self.grid,
+                            player=self.player)
             enc.init_combat()
             return enc
 
         def main_visual(curses_scr):
             enc = initialize_encounter()
-            gamewin = GameWindow(enc.grid, pos=(0, 0))
+            gamewin = GameWindow(self.grid, pos=(0, 0))
             gamewin.redraw()
-            msg_size = (50, 30)
-            msg_pos = (enc.grid.shape[1]+3, 0)
+            msg_size = (30, 50)
+            msg_pos = (gamewin.shape[0] + 2, 0)
             msgwin = MessageWindow(size=msg_size, pos=msg_pos)
 
             init_str = ["Initiative Order"] + enc.turn_order
@@ -67,7 +71,6 @@ class Engine(object):
             enc.summary()
         else:
             results, winners = main_background()
-#            results.to_csv("out.csv", index=False, header=True)
             for ((name, cid), group) in results.groupby(["attacker_name", "attacker_id"]):  # noqa
                 dpr = group[group["hit"] == True]["dmg"].mean()  # noqa
                 hit_ratio = group["hit"].sum() / group.shape[0]
@@ -91,8 +94,9 @@ class GameWindow(object):
 
     def _create_window(self):
         # Curses uses (y,x) coordinates
-        y = self.grid.screen_size[1]
-        x = self.grid.screen_size[0]
+        y = self.grid.screen_size[0]
+        x = self.grid.screen_size[1]
+        self.shape = (y, x)
         self.win = curses.newwin(y, x, *self.pos)
 
     def redraw(self):
@@ -112,8 +116,8 @@ class MessageWindow(object):
         self._create_window()
 
     def _create_window(self):
-        y = self.size[1]
-        x = self.size[0]
+        y = self.size[0]
+        x = self.size[1]
         self.win = curses.newwin(y, x, *self.pos)
 
     def redraw(self, msg):
