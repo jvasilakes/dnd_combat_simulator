@@ -1,8 +1,8 @@
 {"name": "Jake vs. Zombies",
  "team1": {"name": "Gold Dragon",
-	   "members": ["monster.Adult Gold Dragon"]
+	   "members": [["monster.Adult Gold Dragon", 1]]
  	  },
  "team2": {"name": "Black Dragon",
-	   "members": ["monster.Adult Blue Dracolich"]
+	   "members": [["monster.Adult Blue Dracolich", 2]]
  	  }
 }

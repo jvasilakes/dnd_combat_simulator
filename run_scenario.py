@@ -49,34 +49,26 @@ def run(scenario_file, num_encounters, visual, speed, grid):
 
     scenario_data = json.load(open(scenario_file))
 
-    team1 = scenario_data["team1"]
-    team_1_members = []
-    for mem in team1["members"]:
-        (source, name) = mem.split('.')
-        if source == "character":
-            char_data = chars_by_name[name.lower()]
-        elif source == "monster":
-            char_data = monsters_by_name[name.lower()]
-        else:
-            raise ValueError(f"Unsupported character source '{source}'.")
-        team_1_members.append(Character(**char_data))
-    team1 = Team(members=team_1_members, name=team1["name"])
+    teams = []
+    for team_id in ["team1", "team2"]:
+        team_data = scenario_data[team_id]
+        team_members = []
+        for char_type, num in team_data["members"]:
+            (source, name) = char_type.split('.')
+            if source == "character":
+                data_dict = chars_by_name
+            elif source == "monster":
+                data_dict = monsters_by_name
+            else:
+                raise ValueError(f"Unsupported character source '{source}'.")
+            for i in range(num):
+                char_data = data_dict[name.lower()]
+                team_members.append(Character(**char_data))
+        team = Team(members=team_members, name=team_data["name"])
+        teams.append(team)
 
-    team2 = scenario_data["team2"]
-    team_2_members = []
-    for mem in team2["members"]:
-        (source, name) = mem.split('.')
-        if source == "character":
-            char_data = chars_by_name[name.lower()]
-        elif source == "monster":
-            char_data = monsters_by_name[name.lower()]
-        else:
-            raise ValueError(f"Unsupported character source '{source}'.")
-        team_2_members.append(Character(**char_data))
-    team2 = Team(members=team_2_members, name=team2["name"])
-
-    log.debug(f"{team1} vs. {team2}")
-    engine = Engine(team1, team2, grid=grid)
+    log.debug(" vs. ".join([str(t) for t in teams]))
+    engine = Engine(*teams, grid=grid)
     engine.gameloop(num_encounters=num_encounters, visual=visual, speed=speed)
 
 
