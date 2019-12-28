@@ -54,7 +54,7 @@ def test_path1_moves(verbose=False):
     start = (0, 2)
     end = (4, 0)
     g.add_token(Token(name="start", icon='S'), pos=start)
-    g.add_token(Token(name="end", icon='E'), pos=start)
+    g.add_token(Token(name="end", icon='E'), pos=end)
     if verbose is True:
         print("Goal")
         print(g)

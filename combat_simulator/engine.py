@@ -24,6 +24,7 @@ class Engine(object):
         def initialize_encounter():
             # Initialize the grid and add the players
             # to random positions.
+            self.grid.clear()
             for team in self.teams:
                 for character in team.members():
                     if not character.is_alive:

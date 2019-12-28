@@ -3,6 +3,7 @@ import os
 import json
 
 from combat_simulator import Character, Team, Engine, Grid
+from combat_simulator.logger import log
 
 
 def parse_args():
@@ -74,6 +75,7 @@ def run(scenario_file, num_encounters, visual, speed, grid):
         team_2_members.append(Character(**char_data))
     team2 = Team(members=team_2_members, name=team2["name"])
 
+    log.debug(f"{team1} vs. {team2}")
     engine = Engine(team1, team2, grid=grid)
     engine.gameloop(num_encounters=num_encounters, visual=visual, speed=speed)
 

@@ -33,6 +33,9 @@ class Grid(object):
     def __repr__(self):
         return f"{self.shape}"
 
+    def clear(self):
+        self._grid = np.zeros(self.shape, dtype=int)
+
     @property
     def screen_size(self):
         y = self.shape[0] + 2

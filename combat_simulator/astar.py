@@ -1,7 +1,7 @@
 def distance(a, b):
-    (x1, y1) = a
-    (x2, y2) = b
-    return abs(x1 - x2) + abs(y1 - y2)
+    (y1, x1) = a
+    (y2, x2) = b
+    return abs(y1 - y2) + abs(x1 - x2)
 
 
 def astar(start, end, adj_matrix, moves=-1):
