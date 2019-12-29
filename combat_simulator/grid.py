@@ -13,7 +13,7 @@ class Grid(object):
         self.shape = shape
         self._grid = np.zeros(shape, dtype=int)
         self._tok2pos = {}
-        self._pos2tok = defaultdict(None)
+        self._pos2tok = {}
         self._icon_map = {}
 
     def __str__(self):
@@ -33,8 +33,22 @@ class Grid(object):
     def __repr__(self):
         return f"{self.shape}"
 
+    def change_shape(self, shape):
+        self.shape = shape
+        self._grid = np.zeros(shape, dtype=int)
+
     def clear(self):
-        self._grid = np.zeros(self.shape, dtype=int)
+        for row in range(self._grid.shape[0]):
+            for col in range(self._grid.shape[1]):
+                try:
+                    tok = self._pos2tok[(row, col)]
+                except KeyError:
+                    continue
+                if tok.name != "wall":
+                    self._grid[(row, col)] == 0
+                    del self._pos2tok[(row, col)]
+                    del self._tok2pos[tok]
+                    del self._icon_map[tok.id]
 
     @property
     def screen_size(self):
@@ -153,8 +167,9 @@ class Grid(object):
             raise ValueError(f"token must be of type Token.")
         if pos is None:
             idxs = np.where(self._grid == 0)
-            y = np.random.choice(idxs[0])
-            x = np.random.choice(idxs[1])
+            chosen = np.random.choice(range(idxs[0].shape[0]))
+            y = idxs[0][chosen]
+            x = idxs[1][chosen]
             pos = (y, x)
         pos = self._enforce_boundaries(pos)
         self._grid[pos] = 1

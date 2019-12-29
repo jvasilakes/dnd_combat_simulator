@@ -1,8 +1,9 @@
 import argparse
 import os
 import json
+import numpy as np
 
-from combat_simulator import Character, Team, Engine, Grid
+from combat_simulator import Token, Character, Team, Engine, Grid
 from combat_simulator.logger import log
 
 
@@ -20,6 +21,8 @@ def parse_args():
                                 visualization.""")
     parser.add_argument("--grid_shape", nargs=2, type=int, default=[20, 20],
                         help="""Width and height of the battle grid.""")
+    parser.add_argument("--map", type=str, default=None,
+                        help="""Path to saved map file.""")
     return parser.parse_args()
 
 
@@ -37,6 +40,20 @@ def load_monsters(infile):
     monsters_data = (json.loads(line) for line in open(infile))
     monsters_by_name = {m["name"].lower(): m for m in monsters_data}
     return monsters_by_name
+
+
+def load_map(map_file):
+    mat = np.load(map_file)
+    grid = Grid(shape=mat.shape)
+    grid._grid = mat
+    for col in range(grid.shape[0]):
+        for row in range(grid.shape[1]):
+            if not grid._is_traversable((col, row)):
+                w = Token(name="wall", icon='#')
+                grid._tok2pos[w.id] = (col, row)
+                grid._pos2tok[(col, row)] = w
+                grid._icon_map[w.id] = w.icon
+    return grid
 
 
 def run(scenario_file, num_encounters, visual, speed, grid):
@@ -74,6 +91,9 @@ def run(scenario_file, num_encounters, visual, speed, grid):
 
 if __name__ == "__main__":
     args = parse_args()
-    grid = Grid(shape=args.grid_shape)
+    if args.map is not None:
+        grid = load_map(args.map)
+    else:
+        grid = Grid(shape=args.grid_shape)
     run(args.scenario_file, args.num_encounters, args.visual,
         args.speed, grid)
