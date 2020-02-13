@@ -23,5 +23,3 @@ def test_roll():
     assert isinstance(reg, np.int64)
     assert isinstance(adv, np.int64)
     assert isinstance(dis, np.int64)
-    assert adv > reg
-    assert dis < reg

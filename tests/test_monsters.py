@@ -25,7 +25,7 @@ def test_attack_damage():
     monster_data = [json.loads(line) for line in open(monster_file)]
     for md in monster_data:
         monster = Character(**md)
-        atk_roll = player.attack_roll(monster)
+        atk_roll = player.roll_attack(monster)
         assert atk_roll is not None
-        dmg_roll = player.damage_roll(monster)  # noqa unused variable
+        dmg_roll = player.roll_damage(monster)  # noqa unused variable
         assert atk_roll is not None

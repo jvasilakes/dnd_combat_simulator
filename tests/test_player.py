@@ -15,16 +15,49 @@ def test_create_player():
     assert player is not None
 
 
-def test_damage_roll():
+def test_roll_initiative():
     player = Player(name="Test")
     test_data_dir = os.path.join(curdir, "test_data")
     good_char_fpath = os.path.join(test_data_dir, "test_character_good.json")
     good_char_data = json.load(open(good_char_fpath))
     good_char = Character(**good_char_data)
-    roll = player.damage_roll(good_char)
+    roll = player.roll_initiative(good_char)
+    assert roll > 0
+    assert roll <= 20 + good_char.ability_modifier["dex"]
+
+
+def test_roll_attacks():
+    player = Player(name="Test")
+    test_data_dir = os.path.join(curdir, "test_data")
+    good_char_fpath = os.path.join(test_data_dir, "test_character_good.json")
+    good_char_data = json.load(open(good_char_fpath))
+    good_char = Character(**good_char_data)
+    roll = player.roll_attack(good_char)
     assert roll[0] > 0
-    roll = player.damage_roll(good_char, crit=True)
+
+
+def test_roll_damage():
+    player = Player(name="Test")
+    test_data_dir = os.path.join(curdir, "test_data")
+    good_char_fpath = os.path.join(test_data_dir, "test_character_good.json")
+    good_char_data = json.load(open(good_char_fpath))
+    good_char = Character(**good_char_data)
+    roll = player.roll_damage(good_char)
     assert roll[0] > 0
+    roll = player.roll_damage(good_char, crit=True)
+    assert roll[0] > 0
+
+
+def test_saving_throw():
+    player = Player(name="Test")
+    test_data_dir = os.path.join(curdir, "test_data")
+    good_char_fpath = os.path.join(test_data_dir, "test_character_good.json")
+    good_char_data = json.load(open(good_char_fpath))
+    good_char = Character(**good_char_data)
+    for ability in ["str", "dex", "con", "wis", "int", "cha"]:
+        roll = player.saving_throw(good_char, ability)
+        assert roll > 0
+        assert roll <= 20 + good_char.ability_modifier[ability]
 
 
 def test_get_default_attack():
