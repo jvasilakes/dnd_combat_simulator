@@ -3,7 +3,7 @@ import os
 import json
 import numpy as np
 
-from combat_simulator import Token, Character, Team, Engine, Grid
+from combat_simulator import Character, Team, Engine, Grid
 from combat_simulator.logger import log
 
 
@@ -16,7 +16,7 @@ def parse_args():
                         help="""Visualize a single combat encounter.""")
     parser.add_argument("--num_encounters", type=int, default=1000,
                         help="""The number of encounters to run.""")
-    parser.add_argument("--speed", type=float, default=0.3,
+    parser.add_argument("--speed", type=float, default=0.4,
                         help="""How many second to wait between refreshing the
                                 visualization.""")
     parser.add_argument("--grid_shape", nargs=2, type=int, default=[20, 20],
@@ -40,20 +40,6 @@ def load_monsters(infile):
     monsters_data = (json.loads(line) for line in open(infile))
     monsters_by_name = {m["name"].lower(): m for m in monsters_data}
     return monsters_by_name
-
-
-def load_map(map_file):
-    mat = np.load(map_file)
-    grid = Grid(shape=mat.shape)
-    grid._grid = mat
-    for col in range(grid.shape[0]):
-        for row in range(grid.shape[1]):
-            if not grid._is_traversable((col, row)):
-                w = Token(name="wall", icon='#')
-                grid._tok2pos[w.id] = (col, row)
-                grid._pos2tok[(col, row)] = w
-                grid._icon_map[w.id] = w.icon
-    return grid
 
 
 def run(scenario_file, num_encounters, visual, speed, grid):
@@ -92,7 +78,8 @@ def run(scenario_file, num_encounters, visual, speed, grid):
 if __name__ == "__main__":
     args = parse_args()
     if args.map is not None:
-        grid = load_map(args.map)
+        map_matrix = np.load(args.map, allow_pickle=True)
+        grid = Grid.from_map_matrix(map_matrix)
     else:
         grid = Grid(shape=args.grid_shape)
     run(args.scenario_file, args.num_encounters, args.visual,

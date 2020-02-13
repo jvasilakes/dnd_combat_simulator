@@ -19,17 +19,22 @@ class Engine(object):
         assert(isinstance(grid, Grid))
         self.grid = grid
 
-    def gameloop(self, visual=True, num_encounters=1000, speed=0.3):
+    def gameloop(self, visual=True, num_encounters=10, speed=0.3):
 
         def initialize_encounter():
             # Initialize the grid and add the players
             # to random positions.
-            self.grid.clear()
-            for team in self.teams:
+            self.grid.clear_tokens()
+            for (i, team) in enumerate(self.teams):
                 for character in team.members():
+                    if visual is True:
+                        # Makes for nicer visualization.
+                        character.speed = 5
                     if not character.is_alive:
                         character.reset()
-                    self.grid.add_token(character)
+                    added = self.grid.add_token(character, team=i+1)
+                    if added is False:
+                        team.rm_member(character)
 
             # Start the encounter
             enc = Encounter(teams=self.teams, grid=self.grid,
@@ -120,6 +125,7 @@ class MessageWindow(object):
         y = self.size[0]
         x = self.size[1]
         self.win = curses.newwin(y, x, *self.pos)
+        self.win.scrollok(True)
 
     def redraw(self, msg):
         self.win.erase()

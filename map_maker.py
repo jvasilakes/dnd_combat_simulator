@@ -1,3 +1,4 @@
+import argparse
 import curses
 import time
 import numpy as np
@@ -5,8 +6,16 @@ import numpy as np
 from combat_simulator import Grid, Token
 
 
-def main(stdscr):
-    grid = Grid((5, 5))
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--load_map", type=str, default=None,
+                        help="""Edit an existing map.""")
+    return parser.parse_args()
+
+
+def main(stdscr, grid=None):
+    if grid is None:
+        grid = Grid((5, 5))
 
     curses.curs_set(0)
     stdscr.clear()
@@ -21,8 +30,14 @@ def main(stdscr):
     msg_win.refresh()
     msg_win.getch()
 
-    set_grid_shape(grid, main_win, msg_win)
-    add_walls(grid, main_win, msg_win)
+    grid = set_grid_shape(grid, main_win, msg_win)
+    grid = add_walls(grid, main_win, msg_win)
+    msg_win.erase()
+    msg_win.addstr("Add team start positions ([y]/n)?\n")
+    key = msg_win.getkey()
+    if key != 'n':
+        grid._start_positions = {}
+        grid = set_start_positions(grid, main_win, msg_win)
 
     msg_win.erase()
     msg_win.addstr("Save this map ([y]/n)?\n")
@@ -32,13 +47,22 @@ def main(stdscr):
         msg_win.addstr("Name your map: ")
         map_name = msg_win.getstr()
         map_name = map_name.decode("utf-8").strip()
+        map_path = f"maps/{map_name}.npy"
         curses.noecho()
-        np.save(f"maps/{map_name}.npy", grid._grid)
-        msg_win.addstr(f"\nSaved to maps/{map_name}.npy")
+        save_map(map_path, grid)
+        msg_win.addstr(f"\nSaved to {map_path}")
         msg_win.refresh()
         time.sleep(2)
 
     return True
+
+
+def save_map(filename, grid):
+    grid_copy = np.zeros(shape=grid.shape, dtype=str)
+    grid_copy[grid._grid == 0] = '.'
+    for (pos, tok) in grid._pos2tok.items():
+        grid_copy[pos] = tok.icon
+    np.save(filename, grid_copy)
 
 
 def set_grid_shape(grid, main_win, msg_win):
@@ -106,7 +130,7 @@ def cursor_to_grid(grid, y, x):
 def add_walls(grid, main_win, msg_win):
     msg_win.clear()
     msg_win.addstr("Move with 'h', 'j', 'k', 'l'.\n")
-    msg_win.addstr("Place a wall with 'x'.\n")
+    msg_win.addstr("Place a wall with 'a'. Delete it with 'd'.\n")
     msg_win.addstr("Press 'q' when finished.")
     msg_win.refresh()
 
@@ -121,10 +145,14 @@ def add_walls(grid, main_win, msg_win):
         key = main_win.getkey()
         if key == 'q':
             break
-        elif key == 'x':
+        elif key == 'a':
             wall = Token(name="wall", icon='#')
             grid.add_token(wall, pos=pos)
             new_pos = pos
+        elif key == 'd':
+            if grid[pos] is None:
+                continue
+            grid.rm_token(grid[pos])
         elif key == 'j':
             new_pos = (pos[0] + 1, pos[1])
         elif key == 'k':
@@ -148,5 +176,58 @@ def add_walls(grid, main_win, msg_win):
     return grid
 
 
+def set_start_positions(grid, main_win, msg_win):
+    msg_win.clear()
+    msg_win.addstr("Move with 'h', 'j', 'k', 'l'.\n")
+    msg_win.addstr("Place a starting position with 'a'.\n")
+    msg_win.addstr("Press 'q' when finished.")
+    msg_win.refresh()
+
+    pos_num = 1
+    pos = (0, 0)
+    grid_pos = cursor_to_grid(grid, *pos)
+
+    while pos_num <= 2:
+
+        main_win.erase()
+        main_win.addstr(str(grid))
+        main_win.addstr(*grid_pos, str(pos_num))
+        main_win.refresh()
+
+        msg_win.erase()
+        msg_win.addstr(f"\nSet start position for team {pos_num}.")
+        msg_win.refresh()
+
+        key = main_win.getkey()
+        if key == 'q':
+            break
+        elif key == 'a':
+            pos_tok = Token(name="start_pos", icon=str(pos_num))
+            grid.add_token(pos_tok, pos=pos)
+            new_pos = pos
+            pos_num += 1
+        elif key == 'j':
+            new_pos = (pos[0] + 1, pos[1])
+        elif key == 'k':
+            new_pos = (pos[0] - 1, pos[1])
+        elif key == 'l':
+            new_pos = (pos[0], pos[1] + 1)
+        elif key == 'h':
+            new_pos = (pos[0], pos[1] - 1)
+
+        new_grid_pos = cursor_to_grid(grid, *new_pos)
+        # Check if we hit a boundary.
+        if new_grid_pos != grid_pos:
+            grid_pos = new_grid_pos
+            pos = new_pos
+
+    return grid
+
+
 if __name__ == "__main__":
-    curses.wrapper(main)
+    args = parse_args()
+    grid = None
+    if args.load_map is not None:
+        map_matrix = np.load(args.load_map)
+        grid = Grid.from_map_matrix(map_matrix)
+    curses.wrapper(main, grid=grid)

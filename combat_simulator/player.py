@@ -46,7 +46,7 @@ class Player(object):
         mod = character.ability_modifier[ability]
         return roll + mod
 
-    def attack_roll(self, character, attack=None, advantage=0):
+    def roll_attack(self, character, attack=None, advantage=0):
         """
         An attack roll for a given attack.
 
@@ -63,7 +63,7 @@ class Player(object):
         roll = roll_die(d=20, n=1, advantage=advantage)
         return (roll, atk.atk_bonus)
 
-    def damage_roll(self, character, attack=None, crit=False):
+    def roll_damage(self, character, attack=None, crit=False):
         """
         A damage roll for a given attack.
 
@@ -109,7 +109,10 @@ class Player(object):
         pos = grid[character]
         goal_pos = grid[character.goal]
         adj = grid.to_adjacency()
-        num_moves = character.speed / 5
+        num_moves = character.speed // 5
+        # Minimum 5ft of movement.
+        if num_moves == 0:
+            num_moves = 1
         path = astar(pos, goal_pos, adj, moves=num_moves)
         new_pos = path[-1]
         return new_pos

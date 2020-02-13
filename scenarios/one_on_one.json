@@ -1,0 +1,8 @@
+{"name": "Jake vs. Zombies",
+ "team1": {"name": "Team Jake",
+	   "members": [["character.Jake", 1]]
+ 	  },
+ "team2": {"name": "Buggy Bear",
+	   "members": [["monster.Bugbear", 1]]
+ 	  }
+}

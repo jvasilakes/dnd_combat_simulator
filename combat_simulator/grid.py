@@ -7,14 +7,16 @@ from .token import Token
 class Grid(object):
     """
     :param tuple shape: (y, x) size of the grid.
+    :param numpy.ndarray map_matrix: Numpy matrix specifying
+        the map with obstacles and start positions.
     """
 
     def __init__(self, shape=(10, 10)):
         self.shape = shape
         self._grid = np.zeros(shape, dtype=int)
-        self._tok2pos = {}
-        self._pos2tok = {}
-        self._icon_map = {}
+        self._tok2pos = {}  # Token.id: (y, x)
+        self._pos2tok = {}  # (y, x): Token
+        self._start_positions = {}  # team number: list(tuple) of positions
 
     def __str__(self):
         hline = ''.join(['━'] * ((2 * self.shape[1]) - 1))
@@ -22,9 +24,8 @@ class Grid(object):
         bottomline = '┗' + hline + '┛'
         str_grid = self._grid.astype(str)
         str_grid[np.where(str_grid == '0')] = '·'
-        for (tid, pos) in self._tok2pos.items():
-            icon = self._icon_map[tid]
-            str_grid[pos] = icon
+        for (pos, tok) in self._pos2tok.items():
+            str_grid[pos] = tok.icon
         lines = [f"┃{' '.join(row)}┃" for row in str_grid]
         lines.insert(0, topline)
         lines.append(bottomline)
@@ -33,11 +34,49 @@ class Grid(object):
     def __repr__(self):
         return f"{self.shape}"
 
+    @classmethod
+    def from_map_matrix(cls, map_matrix):
+        """
+        Instantiate the Grid from a given matrix
+        (specifically a numpy.ndarray) representing a
+        grid/map as constructed by map_maker.py,
+
+        :param numpy.ndarray map_matrix: grid matrix
+        :returns: Grid from the specified matrix
+        :rtype: Grid
+        """
+        grid = cls(map_matrix.shape)
+        WALL = '#'
+        START_POS = ['1', '2']
+        # [(pos, team_number)]
+        start_positions = []
+        for col in range(map_matrix.shape[0]):
+            for row in range(map_matrix.shape[1]):
+                icon = map_matrix[(col, row)]
+                if icon == '.':
+                    continue
+                elif icon in START_POS:
+                    start_positions.append(((col, row), int(icon)))
+                    continue
+                elif icon == WALL:
+                    name = "wall"
+                else:
+                    name = "unk"
+                t = Token(name=name, icon=icon)
+                grid.add_token(t, pos=(col, row))
+
+        for (pos, team) in start_positions:
+            grid._set_start_positions(pos, team=team)
+        return grid
+
     def change_shape(self, shape):
         self.shape = shape
         self._grid = np.zeros(shape, dtype=int)
 
-    def clear(self):
+    def clear_tokens(self):
+        """
+        Remove all non-wall tokens from this grid.
+        """
         for row in range(self._grid.shape[0]):
             for col in range(self._grid.shape[1]):
                 try:
@@ -45,10 +84,25 @@ class Grid(object):
                 except KeyError:
                     continue
                 if tok.name != "wall":
-                    self._grid[(row, col)] == 0
+                    self._grid[(row, col)] = 0
                     del self._pos2tok[(row, col)]
-                    del self._tok2pos[tok]
-                    del self._icon_map[tok.id]
+                    del self._tok2pos[tok.id]
+
+    def _set_start_positions(self, pos, team=1):
+        """
+        The start positions are those non-occupied
+        positions within a 10ft radius of pos.
+
+        :param tuple pos: The center of positions area.
+        """
+        area = set()
+        for adj1 in self._get_adjacent_indices(pos):
+            if self._is_traversable(adj1):
+                area.add(adj1)
+            for adj2 in self._get_adjacent_indices(adj1):
+                if self._is_traversable(adj2):
+                    area.add(adj2)
+        self._start_positions[team] = list(area)
 
     @property
     def screen_size(self):
@@ -113,6 +167,8 @@ class Grid(object):
             if self._is_valid(pos) is False:
                 msg = f"Position {pos} invalid for grid of shape {self.shape}"
                 raise KeyError(msg)
+            # Yes this will return None. This is desired functionality so that
+            # pos is an empty cell, grid[pos] will return None.
             return self._pos2tok.get(pos)
         else:
             raise ValueError(f"Unsupported key type {type(token_or_pos)}")
@@ -134,12 +190,19 @@ class Grid(object):
             raise ValueError(f"token must be of type Token.")
         if not len(pos) == 2 and all([isinstance(p, int) for p in pos]):
             raise ValueError(f"pos must have length 2 and be (int, int).")
-        pos = self._enforce_boundaries(pos)
-        current_pos = self._tok2pos[token.id]
-        self._grid[current_pos] = 0
-        self._grid[pos] = 1
-        self._tok2pos[token.id] = pos
-        self._pos2tok[pos] = token
+        new_pos = self._enforce_boundaries(pos)
+        old_pos = self._tok2pos[token.id]
+        # Token didn't actually move after enforcing boundaries.
+        if new_pos == old_pos:
+            return
+        self._grid[old_pos] = 0
+        self._grid[new_pos] = 1
+        self._tok2pos[token.id] = new_pos
+        self._pos2tok[new_pos] = token
+        try:
+            del self._pos2tok[old_pos]
+        except KeyError:
+            raise KeyError(f"{old_pos},  {token}{token.id}, {token.is_alive}\n{self._pos2tok}\n{self._tok2pos}")  # noqa
 
     def rm_token(self, token):
         """
@@ -152,30 +215,46 @@ class Grid(object):
         pos = self._tok2pos[token.id]
         self._grid[pos] = 0
         del self._tok2pos[token.id]
-        del self._icon_map[token.id]
-        self._pos2tok[pos] = None
+        del self._pos2tok[pos]
 
-    def add_token(self, token, pos=None):
+    def add_token(self, token, pos=None, team=None):
         """
         Add a Token instance to the grid. If pos is not specified,
         randomly assign it to an unoccupied position.
 
         :param Token token: The token to add.
         :param tuple(int) pos: The (y, x) position of the token. Optional.
+        :param int team: (Optional) The number of the team to which this
+            token belongs.
         """
         if not isinstance(token, Token):
             raise ValueError(f"token must be of type Token.")
+        # We filled up the grid!
+        if self._grid.sum() == self._grid.ravel().shape[0]:
+            return False
         if pos is None:
-            idxs = np.where(self._grid == 0)
-            chosen = np.random.choice(range(idxs[0].shape[0]))
-            y = idxs[0][chosen]
-            x = idxs[1][chosen]
-            pos = (y, x)
+            if team is not None and self._start_positions != []:
+                idxs = [i for i in self._start_positions[team]
+                        if self._is_traversable(self._enforce_boundaries(i))]
+                i = 0
+                while idxs == []:
+                    search_from = self._start_positions[team][i]
+                    adjacents = self._get_adjacent_indices(search_from)
+                    idxs = [i for i in adjacents
+                            if self._is_traversable(self._enforce_boundaries(i))]  # noqa
+                    self._start_positions[team].extend(idxs)
+                    i += 1
+            else:
+                idxs = list(zip(*np.where(self._grid == 0)))
+            chosen = np.random.choice(len(idxs))
+            pos = idxs[chosen]
         pos = self._enforce_boundaries(pos)
+        if not self._is_traversable(pos):
+            return False
         self._grid[pos] = 1
         self._tok2pos[token.id] = pos
-        self._icon_map[token.id] = token.icon
         self._pos2tok[pos] = token
+        return True
 
     def _get_adjacent_indices(self, pos):
         """

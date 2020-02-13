@@ -34,6 +34,14 @@ class Team(object):
     def __len__(self):
         return len(self._members)
 
+    def rm_member(self, character):
+        """
+        Remove a team member.
+
+        :param Character character: The team member to remove.
+        """
+        self._members = [m for m in self._members if m != character]
+
     def members(self, alive_only=False):
         """
         Returns the team members.
@@ -131,12 +139,12 @@ class Encounter(object):
         is_crit = False
         dmg = 0
         atk = self.player.choose_attack(attacker, target=victim)
-        roll, bonus = self.player.attack_roll(attacker, atk)
+        roll, bonus = self.player.roll_attack(attacker, atk)
         is_hit = _hit(roll, bonus, victim.ac)
         if is_hit is True:
             if roll == 20:
                 is_crit = True
-            dmg = sum(self.player.damage_roll(attacker, atk, crit=is_crit))
+            dmg = sum(self.player.roll_damage(attacker, atk, crit=is_crit))
             victim.HP -= dmg
         return (is_hit, is_crit, dmg)
 
