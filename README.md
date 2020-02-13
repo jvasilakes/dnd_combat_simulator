@@ -28,6 +28,14 @@ python --scenario_file scenarios/example.json --visual
   <img width="600" src="https://github.com/jvasilakes/dnd_combat_simulator/blob/master/graphics/battle.svg">
 </p>
 
+```
+python map_maker.py
+```
+
+<p align="center">
+  <img width="600" src="https://github.com/jvasilakes/dnd_combat_simulator/blob/master/graphics/map_example.svg">
+</p>
+
 Recorded with asciinema and svg-term-cli
 
 ```
