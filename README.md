@@ -1,3 +1,6 @@
+[![Build Status](https://api.travis-ci.org/jvasilakes/dnd_combat_simulator.svg?branch=master)](https://travis-ci.org/jvasilakes/dnd_combat_simulator)
+[![Coverage Status](https://coveralls.io/repos/github/jvasilakes/dnd_combat_simulator/badge.svg?branch=master)](https://coveralls.io/github/jvasilakes/dnd_combat_simulator?branch=master)
+
 # Dungeons and Dragons Combat Simulator
 
 ### Usage
