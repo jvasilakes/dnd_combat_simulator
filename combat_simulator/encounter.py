@@ -163,6 +163,7 @@ class Encounter(object):
         self._set_combatants_goals()
         self.turn_order = self._roll_initiative()
 
+    # TODO: Actually implement verbose
     def run_combat(self, random_seed=None, verbose=0):
         """
         Run simulated combat among all the teams.

@@ -217,6 +217,18 @@ class Grid(object):
         del self._tok2pos[token.id]
         del self._pos2tok[pos]
 
+    # TODO
+    def add_team(self, team, pos=None):
+        """
+        Add a team of characters to the grid. If pos is not None,
+        add them centered around pos. If pos is None, one of two
+        things may happen:
+          * If this grid contains team start positions for this team,
+            they will be used.
+          * An available position will be randomly assigned.
+        """
+        raise NotImplementedError("Grid.add_team() is planned functionality.")
+
     def add_token(self, token, pos=None, team=None):
         """
         Add a Token instance to the grid. If pos is not specified,
