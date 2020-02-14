@@ -124,8 +124,6 @@ def test_fight():
         start_hp = team2_chars[0].HP
         hit, crit, dmg = encounter._fight(team1_chars[0], team2_chars[0])
         seen.add((hit, crit))
-        with open("log.log", 'a') as outF:
-            outF.write(str((hit, crit)) + '\n')
         assert isinstance(hit, bool)
         assert isinstance(crit, bool)
         assert dmg >= 0

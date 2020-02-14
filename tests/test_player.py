@@ -88,6 +88,12 @@ def test_find_best_position():
     new_pos = player._find_best_position(good_char, grid)
     assert new_pos == (0, 4)
 
+    grid[good_char] = new_pos
+    good_char.speed = 1
+    grid[good_char2] = (5, 5)
+    new_pos = player._find_best_position(good_char, grid)
+    assert new_pos in [(1, 4), (0, 5)]
+
 
 def test_move_character():
     player = Player(name="Test")
