@@ -32,7 +32,7 @@ def roll_die(d=20, n=1, advantage=0):
     else:
         n = (n, 1)
     # Sum over the rolls.
-    rolls = np.random.randint(1, d, size=n).sum(axis=0)
+    rolls = np.random.randint(1, d+1, size=n).sum(axis=0)
     # Then take (dis)advantage into account.
     if advantage == 1:
         return np.max(rolls)
