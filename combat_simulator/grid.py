@@ -245,7 +245,7 @@ class Grid(object):
         if self._grid.sum() == self._grid.ravel().shape[0]:
             return False
         if pos is None:
-            if team is not None and self._start_positions != []:
+            if team is not None and self._start_positions != {}:
                 idxs = [i for i in self._start_positions[team]
                         if self._is_traversable(self._enforce_boundaries(i))]
                 i = 0
