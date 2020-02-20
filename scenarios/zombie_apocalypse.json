@@ -3,6 +3,6 @@
 	   "members": [["character.Jake", 2]]
  	  },
  "team2": {"name": "Zombie Patrol",
-	   "members": [["monster.Zombie", 2000]]
+	   "members": [["monster.Zombie", 10]]
  	  }
 }

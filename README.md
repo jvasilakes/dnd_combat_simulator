@@ -6,7 +6,7 @@
 ### Usage
 
 ```
-python run_scenario.py --scenario_file scenarios/example.json --num_encounters 50
+python run_scenario.py --scenario_file scenarios/zombie_apocalypse.json --num_encounters 50
 
 100%|███████████████████████████████████████████████████████████████████████████████████| 50/50 [00:14<00:00,  3.39it/s]
 Jake (01): DPR (6.97), hit ratio (0.79)
@@ -24,7 +24,7 @@ Zombie Patrol: 35 / 50 (0.70)
 
 
 ```
-python --scenario_file scenarios/example.json --visual
+python --scenario_file scenarios/zombie_apocalypse.json --visual
 ```
 
 <p align="center">
