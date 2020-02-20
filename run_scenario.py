@@ -72,7 +72,9 @@ def run(scenario_file, num_encounters, visual, speed, grid):
 
     log.debug(" vs. ".join([str(t) for t in teams]))
     engine = Engine(*teams, grid=grid)
-    engine.gameloop(num_encounters=num_encounters, visual=visual, speed=speed)
+    summary = engine.gameloop(num_encounters=num_encounters,
+                              visual=visual, speed=speed)
+    print(summary)
 
 
 if __name__ == "__main__":
